@@ -1,0 +1,21 @@
+## Intermediate/Compiled files
+bin/
+obj/
+publish/
+
+## Dependencies
+node_modules/
+
+## IDE/Tooling
+.vscode/
+*.user
+*.userosscache
+*.sln.docstates
+
+## OS files
+.DS_Store
+Thumbs.db
+
+## Sensitive info (Web Deploy profiles with passwords)
+Properties/PublishProfiles/*.pubxml
+*.publishSettings

@@ -1,0 +1,155 @@
+@page "/"
+@using PboWasm.Services
+@inject IQrScannerService QrScannerService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Home</PageTitle>
+
+<div class="card w-full max-w-2xl mx-auto bg-base-100 shadow-xl border border-base-300">
+    <div class="card-body p-6">
+        <h2 class="card-title text-2xl font-bold mb-6 flex items-center gap-3">
+            <div class="p-2 bg-primary/10 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 24px;" class="text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </div>
+            QR & Camera POC
+        </h2>
+        
+        @if (isScanning)
+        {
+            <div class="flex flex-col items-center gap-4">
+                <div class="badge badge-info gap-2 p-4">
+                    <span class="loading loading-spinner loading-xs"></span>
+                    Camera is active
+                </div>
+                
+                <div class="relative w-full aspect-square max-w-sm bg-black rounded-2xl shadow-2xl overflow-hidden ring-4 ring-primary/20">
+                    <video id="videoFeed" class="w-full h-full object-cover"></video>
+                    <canvas id="qrCanvas" class="hidden"></canvas>
+                    <div class="absolute inset-0 border-2 border-primary/50 pointer-events-none"></div>
+                    <div class="absolute top-0 left-0 w-full h-1 bg-primary/40 shadow-[0_0_15px_rgba(var(--p),0.5)] animate-scan"></div>
+                </div>
+                
+                <div class="flex gap-3 mt-4">
+                    <button class="btn btn-primary" @onclick="TakePhoto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        Take Photo
+                    </button>
+                    <button class="btn btn-outline" @onclick="StopScanning">Stop</button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="flex flex-col items-center gap-8 py-10">
+                <div class="relative">
+                    <div class="absolute -inset-4 bg-primary/10 rounded-full blur-xl animate-pulse"></div>
+                    <div class="relative bg-base-100 p-8 rounded-full border-2 border-primary/20 shadow-inner">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="width: 64px; height: 64px;" class="text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        </svg>
+                    </div>
+                </div>
+                
+                <div class="text-center space-y-2">
+                    <p class="text-lg font-medium opacity-80">Ready to scan?</p>
+                    <p class="text-sm opacity-50 max-w-xs mx-auto">
+                        This tool uses your device's camera to read QR codes and capture snapshots.
+                    </p>
+                </div>
+                
+                <button class="btn btn-primary btn-lg px-12 rounded-full shadow-xl shadow-primary/20 hover:scale-105 transition-transform" @onclick="StartScanning">
+                    Start Camera
+                </button>
+            </div>
+        }
+
+        <div class="space-y-4 mt-8">
+            @if (!string.IsNullOrEmpty(lastResult))
+            {
+                <div class="alert alert-success shadow-sm border border-success/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <div>
+                        <h3 class="font-bold">Result Found!</h3>
+                        <div class="text-xs font-mono mt-1 break-all bg-base-100/50 p-2 rounded">@lastResult</div>
+                    </div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(capturedPhoto))
+            {
+                <div class="collapse collapse-arrow bg-base-200 border border-base-300">
+                    <input type="checkbox" checked /> 
+                    <div class="collapse-title font-medium flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        Last Captured Photo
+                    </div>
+                    <div class="collapse-content px-4 pb-4">
+                        <div class="relative group">
+                            <img src="@capturedPhoto" alt="Captured Photo" class="w-full rounded-lg shadow-lg border border-base-300" />
+                            <button class="btn btn-circle btn-xs btn-error absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity" @onclick="() => capturedPhoto = null">✕</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    @@keyframes scan {
+        0%, 100% { top: 0%; }
+        50% { top: 100%; }
+    }
+    .animate-scan {
+        animation: scan 3s linear infinite;
+    }
+</style>
+
+@code {
+    private bool isScanning = false;
+    private string? lastResult;
+    private string? capturedPhoto;
+
+    private async Task StartScanning()
+    {
+        isScanning = true;
+        lastResult = null;
+        StateHasChanged();
+
+        // Give Blazor time to render the video and canvas elements
+        await Task.Delay(300);
+
+        try 
+        {
+            lastResult = await QrScannerService.ScanAsync();
+        }
+        catch (Exception ex)
+        {
+            lastResult = "Error: " + ex.Message;
+        }
+        
+        if (isScanning && !string.IsNullOrEmpty(lastResult))
+        {
+            await StopScanning();
+        }
+    }
+
+    private async Task TakePhoto()
+    {
+        capturedPhoto = await QrScannerService.CapturePhotoAsync();
+        StateHasChanged();
+    }
+
+    private async Task StopScanning()
+    {
+        isScanning = false;
+        try 
+        {
+            await JSRuntime.InvokeVoidAsync("qrScanner.stopScanner", "videoFeed");
+        }
+        catch { /* Ignore if already stopped or not started */ }
+        StateHasChanged();
+    }
+}
