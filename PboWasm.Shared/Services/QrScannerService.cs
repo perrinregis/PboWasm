@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
 
 namespace PboWasm.Services;
@@ -12,12 +11,10 @@ public interface IQrScannerService
 public class QrScannerService : IQrScannerService
 {
     private readonly IJSRuntime _jsRuntime;
-    private readonly IWebAssemblyHostEnvironment _environment;
 
-    public QrScannerService(IJSRuntime jsRuntime, IWebAssemblyHostEnvironment environment)
+    public QrScannerService(IJSRuntime jsRuntime)
     {
         _jsRuntime = jsRuntime;
-        _environment = environment;
     }
 
     public async Task<string> ScanAsync()

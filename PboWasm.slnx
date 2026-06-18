@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="PboWasm.Web/PboWasm.Web.csproj" />
+  <Project Path="PboWasm.Maui/PboWasm.Maui.csproj" />
+  <Project Path="PboWasm.Shared/PboWasm.Shared.csproj" />
+</Solution>

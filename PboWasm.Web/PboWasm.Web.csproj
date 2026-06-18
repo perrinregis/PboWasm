@@ -13,10 +13,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.3" PrivateAssets="all" />
   </ItemGroup>
 
-  <!-- Tailwind CSS Compilation -->
-  <Target Name="Tailwind" BeforeTargets="Build;Publish">
-    <Exec Command="npm install" />
-    <Exec Command="npm run build:css" />
-  </Target>
+  <ItemGroup>
+    <ProjectReference Include="..\PboWasm.Shared\PboWasm.Shared.csproj" />
+  </ItemGroup>
 
 </Project>
