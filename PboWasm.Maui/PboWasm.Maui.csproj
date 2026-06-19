@@ -2,12 +2,8 @@
 
   <PropertyGroup>
     <!-- Restreindre MAUI à Windows uniquement pour le développement local -->
-    <MauiPlatforms>windows</MauiPlatforms>
-    <TargetFrameworks>net10.0-windows10.0.19041.0</TargetFrameworks>
-    
-    <!-- Pour générer l'APK Android, décommente les lignes ci-dessous et commente les deux ci-dessus -->
-    <!-- <MauiPlatforms>android</MauiPlatforms>
-    <TargetFrameworks>net10.0-android</TargetFrameworks> -->
+    <MauiPlatforms>windows;android</MauiPlatforms>
+    <TargetFrameworks>net10.0-windows10.0.19041.0;net10.0-android</TargetFrameworks>
     
     <WindowsPackageType>None</WindowsPackageType>
 

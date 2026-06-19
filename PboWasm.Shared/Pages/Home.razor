@@ -1,6 +1,7 @@
 @page "/"
 @using PboWasm.Services
 @inject IQrScannerService QrScannerService
+@inject IPermissionService PermissionService
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Home</PageTitle>
@@ -114,8 +115,17 @@
 
     private async Task StartScanning()
     {
-        isScanning = true;
         lastResult = null;
+
+        var hasPermission = await PermissionService.CheckAndRequestCameraPermissionAsync();
+        if (!hasPermission)
+        {
+            lastResult = "Error: Camera permission is required.";
+            StateHasChanged();
+            return;
+        }
+
+        isScanning = true;
         StateHasChanged();
 
         // Give Blazor time to render the video and canvas elements

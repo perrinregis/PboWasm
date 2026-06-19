@@ -8,5 +8,6 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddScoped<IQrScannerService, QrScannerService>();
+builder.Services.AddScoped<IPermissionService, PboWasm.Web.Services.WebPermissionService>();
 
 await builder.Build().RunAsync();
