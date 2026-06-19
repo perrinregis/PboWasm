@@ -20,7 +20,7 @@ public static class MauiProgram
 
         // Register Http client and scanner services
         builder.Services.AddSingleton(sp => new HttpClient());
-        builder.Services.AddSingleton<IQrScannerService, QrScannerService>();
+        builder.Services.AddScoped<IQrScannerService, QrScannerService>();
 
 #if ANDROID
         Microsoft.Maui.Handlers.BlazorWebViewHandler.Mapper.AppendToMapping("PermissionRequest", (handler, view) =>

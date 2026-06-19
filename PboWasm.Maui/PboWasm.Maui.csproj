@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
     <!-- Restreindre MAUI à Windows uniquement pour le développement local -->
@@ -9,6 +9,8 @@
     <!-- <MauiPlatforms>android</MauiPlatforms>
     <TargetFrameworks>net10.0-android</TargetFrameworks> -->
     
+    <WindowsPackageType>None</WindowsPackageType>
+
     <OutputType>Exe</OutputType>
     <UseMaui>true</UseMaui>
     <SingleProject>true</SingleProject>
@@ -34,6 +36,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.3" />
     <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.3" />
     <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
