@@ -88,3 +88,12 @@ Si vous souhaitez que les modifications de classes Tailwind soient appliquées e
 *   **[PboWasm.Shared/Services/QrScannerService.cs](file:///C:/MyDev/PboWasm/PboWasm.Shared/Services/QrScannerService.cs)** : Service C# de communication avec la caméra et la bibliothèque de scan QR.
 *   **[PboWasm.Shared/wwwroot/js/qrScanner.js](file:///C:/MyDev/PboWasm/PboWasm.Shared/wwwroot/js/qrScanner.js)** : Logique JS interop pour l'intégration de la caméra et du décodage QR (via `jsQR`).
 *   **[PboWasm.Shared/wwwroot/js/themeManager.js](file:///C:/MyDev/PboWasm/PboWasm.Shared/wwwroot/js/themeManager.js)** : Gestion de la persistance et de l'initialisation du thème DaisyUI (clair/sombre).
+
+
+Debug Android 
+chrome
+chrome://inspect/#devices
+
+Adb
+C:\Users\rperrin\AppData\Local\Android\Sdk\platform-tools\adb.exe logcat -s "mono-rt" "Microsoft.Maui" "chromium" "CONSOLE" *:E
+

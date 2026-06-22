@@ -10,9 +10,12 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.3" />
   </ItemGroup>
 
-  <!-- Tailwind CSS Compilation -->
-  <Target Name="Tailwind" BeforeTargets="Build;Publish">
-    <Exec Command="npm install" />
+  <!-- Tailwind CSS Compilation - Incremental (only rebuilds if source files changed) -->
+  <Target Name="Tailwind" BeforeTargets="Build;Publish"
+          Inputs="Styles/app.css;@(Content->WithMetadataValue('Extension', '.razor'));tailwind.config.js"
+          Outputs="wwwroot/css/app.css">
+    <!-- Only run npm install if node_modules is missing -->
+    <Exec Command="npm install" Condition="!Exists('node_modules')" />
     <Exec Command="npm run build:css" />
   </Target>
 
