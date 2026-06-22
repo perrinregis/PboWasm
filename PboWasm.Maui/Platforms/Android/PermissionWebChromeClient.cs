@@ -1,13 +1,15 @@
 #if ANDROID
 using Android.Webkit;
-using Microsoft.AspNetCore.Components.WebView.Maui;
 
 namespace PboWasm.Maui.Platforms.Android;
 
-public class PermissionWebChromeClient : MauiWebChromeClient
+public class PermissionWebChromeClient : WebChromeClient
 {
-    public PermissionWebChromeClient(BlazorWebViewHandler handler) : base(handler)
+    private readonly WebChromeClient? _inner;
+
+    public PermissionWebChromeClient(WebChromeClient? inner = null)
     {
+        _inner = inner;
     }
 
     public override void OnPermissionRequest(PermissionRequest? request)
@@ -16,6 +18,15 @@ public class PermissionWebChromeClient : MauiWebChromeClient
         {
             request.Grant(request.GetResources());
         }
+    }
+
+    public override bool OnConsoleMessage(ConsoleMessage? consoleMessage)
+        => _inner?.OnConsoleMessage(consoleMessage) ?? base.OnConsoleMessage(consoleMessage);
+
+    public override void OnProgressChanged(global::Android.Webkit.WebView? view, int newProgress)
+    {
+        _inner?.OnProgressChanged(view, newProgress);
+        base.OnProgressChanged(view, newProgress);
     }
 }
 #endif
