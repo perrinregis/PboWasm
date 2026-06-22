@@ -6,6 +6,9 @@
     <TargetFrameworks>net10.0-windows10.0.19041.0;net10.0-android</TargetFrameworks>
     
     <WindowsPackageType>None</WindowsPackageType>
+    
+    <!-- Disable Fast Deployment to fix Android debugging and assembly loading issues -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 
     <OutputType>Exe</OutputType>
     <UseMaui>true</UseMaui>

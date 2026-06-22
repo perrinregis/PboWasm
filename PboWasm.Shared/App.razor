@@ -1,6 +1,11 @@
-<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(PboWasm.Shared.Pages.NotFound)">
+<Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <p role="alert" class="p-4 text-center">Désolé, il n'y a rien à cette adresse.</p>
+        </LayoutView>
+    </NotFound>
 </Router>

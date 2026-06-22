@@ -7,7 +7,7 @@ publish/
 node_modules/
 
 ## IDE/Tooling
-.vscode/
+#.vscode/
 *.user
 *.userosscache
 *.sln.docstates

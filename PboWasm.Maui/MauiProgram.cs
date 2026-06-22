@@ -7,6 +7,7 @@ public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
     {
+        System.Diagnostics.Debugger.Break();
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>();
@@ -25,6 +26,7 @@ public static class MauiProgram
         builder.Services.AddScoped<IPermissionService, PboWasm.Maui.Services.MauiPermissionService>();
 
 #if ANDROID
+        Android.Webkit.WebView.SetWebContentsDebuggingEnabled(true);
         Microsoft.AspNetCore.Components.WebView.Maui.BlazorWebViewHandler.BlazorWebViewMapper.AppendToMapping("PermissionRequest", (handler, view) =>
         {
             handler.PlatformView.SetWebChromeClient(new Platforms.Android.PermissionWebChromeClient());
