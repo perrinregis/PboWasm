@@ -4,10 +4,16 @@
              xmlns:shared="clr-namespace:PboWasm.Shared;assembly=PboWasm.Shared"
              x:Class="PboWasm.Maui.MainPage">
 
-    <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html">
-        <BlazorWebView.RootComponents>
-            <RootComponent Selector="#app" ComponentType="{x:Type shared:App}" />
-        </BlazorWebView.RootComponents>
-    </BlazorWebView>
+    <Grid>
+        <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html">
+            <BlazorWebView.RootComponents>
+                <RootComponent Selector="#app" ComponentType="{x:Type shared:App}" />
+            </BlazorWebView.RootComponents>
+        </BlazorWebView>
+
+        <ScrollView x:Name="errorPanel" IsVisible="False" BackgroundColor="Red" Padding="20" VerticalOptions="Fill">
+            <Label x:Name="errorLabel" TextColor="White" FontSize="12" />
+        </ScrollView>
+    </Grid>
 
 </ContentPage>
