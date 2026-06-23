@@ -1,0 +1,44 @@
+name: Deploy PWA to SmarterASP
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch: # Permet de lancer le déploiement manuellement depuis GitHub
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: ⚙️ Setup Node.js (pour TailwindCSS)
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: 📦 Install NPM dependencies
+      run: |
+        cd PboWasm.Shared
+        npm install
+
+    - name: ⚙️ Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x' # Ou 9.0.x selon la version sur laquelle tourne votre projet
+        include-prerelease: true
+
+    - name: 🛠️ Build and Publish Blazor WebAssembly
+      run: dotnet publish PboWasm.Web/PboWasm.Web.csproj -c Release -o ./publish
+
+    - name: 🚀 Deploy to SmarterASP via FTP
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: ./publish/wwwroot/ # Pour Blazor WASM, on n'uploade QUE le contenu de wwwroot
+        server-dir: /site1/ # À adapter selon le dossier racine sur SmarterASP (souvent / ou /site1/)
