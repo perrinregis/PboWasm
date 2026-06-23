@@ -27,6 +27,12 @@ public static class MauiProgram
 #if ANDROID
         Microsoft.AspNetCore.Components.WebView.Maui.BlazorWebViewHandler.BlazorWebViewMapper.AppendToMapping("PermissionRequest", (handler, view) =>
         {
+            // Prevent recursive wrapping if it's already a PermissionWebChromeClient
+            if (handler.PlatformView.WebChromeClient is Platforms.Android.PermissionWebChromeClient)
+            {
+                return;
+            }
+
             // WebChromeClient property only exists on Android 26+
             // BlazorWebView itself requires Android 23+
             if (OperatingSystem.IsAndroidVersionAtLeast(26))
