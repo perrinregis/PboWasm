@@ -22,6 +22,7 @@ public static class MauiProgram
         // Register Http client and scanner services
         builder.Services.AddSingleton(sp => new HttpClient());
         builder.Services.AddScoped<IQrScannerService, QrScannerService>();
+        builder.Services.AddScoped<PboWasm.Shared.Services.ILocalStorageService, PboWasm.Shared.Services.LocalStorageService>();
         builder.Services.AddScoped<IPermissionService, PboWasm.Maui.Services.MauiPermissionService>();
 
 #if ANDROID
