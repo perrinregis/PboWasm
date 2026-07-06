@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PboWasm.Api.Data;
-using PboWasm.Api.Models;
+using PboWasm.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,10 +32,10 @@ app.UseCors("AllowBlazor");
 
 app.MapGet("/", () => "PboWasm API is running!");
 
-app.MapPost("/api/register", async (PboWasm.Shared.Models.RegisterRequest req, AppDbContext db) =>
+app.MapPost("/api/register", async (PboWasm.Models.RegisterRequest req, AppDbContext db) =>
 {
     if (await db.Users.AnyAsync(u => u.Email == req.Email))
-        return Results.BadRequest(new PboWasm.Shared.Models.AuthResponse { Success = false, Message = "Email déjà utilisé." });
+        return Results.BadRequest(new PboWasm.Models.AuthResponse { Success = false, Message = "Email déjà utilisé." });
 
     // TODO: Hash password properly in production (e.g. BCrypt)
     var user = new User
@@ -52,18 +52,18 @@ app.MapPost("/api/register", async (PboWasm.Shared.Models.RegisterRequest req, A
     // Here we would normally send the email via SendGrid.
     Console.WriteLine($"[EMAIL SIMULATION] Code de validation pour {user.Email} : {user.ValidationCode}");
 
-    return Results.Ok(new PboWasm.Shared.Models.AuthResponse { Success = true, Message = "Inscription réussie ! Veuillez vérifier vos emails." });
+    return Results.Ok(new PboWasm.Models.AuthResponse { Success = true, Message = "Inscription réussie ! Veuillez vérifier vos emails." });
 });
 
-app.MapPost("/api/login", async (PboWasm.Shared.Models.LoginRequest req, AppDbContext db) =>
+app.MapPost("/api/login", async (PboWasm.Models.LoginRequest req, AppDbContext db) =>
 {
     var user = await db.Users.FirstOrDefaultAsync(u => u.Email == req.Email && u.PasswordHash == req.Password);
     
     if (user == null)
-        return Results.BadRequest(new PboWasm.Shared.Models.AuthResponse { Success = false, Message = "Identifiants incorrects." });
+        return Results.BadRequest(new PboWasm.Models.AuthResponse { Success = false, Message = "Identifiants incorrects." });
 
     if (!user.IsEmailValidated)
-        return Results.BadRequest(new PboWasm.Shared.Models.AuthResponse { Success = false, Message = "Veuillez valider votre email d'abord." });
+        return Results.BadRequest(new PboWasm.Models.AuthResponse { Success = false, Message = "Veuillez valider votre email d'abord." });
 
     // Normally generate a real JWT token here
     var fakeToken = $"fake-jwt-token-for-{user.Id}";

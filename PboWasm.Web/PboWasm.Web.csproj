@@ -20,8 +20,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PboWasm.Shared\PboWasm.Shared.csproj" />
+    <ProjectReference Include="..\PboWasm.Models\PboWasm.Models.csproj" />
   </ItemGroup>
+
+  <!-- Tailwind CSS Compilation -->
+  <Target Name="Tailwind" BeforeTargets="Build;Publish" Inputs="Styles/app.css;@(Content-&gt;WithMetadataValue('Extension', '.razor'));tailwind.config.js" Outputs="wwwroot/css/app.css">
+    <Exec Command="npm install" Condition="!Exists('node_modules')" />
+    <Exec Command="npm run build:css" />
+  </Target>
 
   <!-- Workaround for .NET 9/10 static asset fingerprinting on pure static hosts -->
   <Target Name="FixBlazorWebAssemblyJs" AfterTargets="Publish">
