@@ -1,4 +1,4 @@
-namespace PboWasm.Api.Services;
+namespace PboWasm.Services.Email;
 
 public interface IEmailService
 {

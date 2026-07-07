@@ -1,6 +1,7 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
-namespace PboWasm.Api.Models;
+namespace PboWasm.Services.Entities;
 
 public class User
 {

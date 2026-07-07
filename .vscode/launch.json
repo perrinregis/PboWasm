@@ -1,51 +1,60 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Launch Web (Blazor WASM)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/PboWasm.Web/bin/Debug/net10.0/PboWasm.Web.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/PboWasm.Web",
-            "serverReadyAction": {
-                "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-            },
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            }
-        },
-        {
-            "name": "Launch API (ASP.NET Core)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build-api",
-            "program": "${workspaceFolder}/PboWasm.Api/bin/Debug/net10.0/PboWasm.Api.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/PboWasm.Api",
-            "stopAtEntry": false,
-            "serverReadyAction": {
-                
-                "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
-            },
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            },
-            "sourceFileMap": {
-                "/Views": "${workspaceFolder}/Views"
-            }
-        }
-    ],
-    "compounds": [
-        {
-            "name": "Launch Web + API",
-            "configurations": [
-                "Launch API (ASP.NET Core)",
-                "Launch Web (Blazor WASM)"
-            ]
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Web (Blazor WASM)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-web",
+      "program": "dotnet",
+      "args": [
+        "run"
+      ],
+      "cwd": "${workspaceFolder}/PboWasm.Web",
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Launch Azure Functions",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:azureFunctions.pickProcess}"
+    },
+    {
+      "name": "Launch API (ASP.NET Core)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-api",
+      "program": "${workspaceFolder}/PboWasm.Api/bin/Debug/net10.0/PboWasm.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/PboWasm.Api",
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Attach to .NET Functions",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:azureFunctions.pickProcess}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch Web + Functions",
+      "configurations": [
+        "Launch Web (Blazor WASM)"
+      ],
+      "preLaunchTask": "run-functions"
+    }
+  ]
 }

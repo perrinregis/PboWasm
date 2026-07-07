@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using PboWasm.Api.Models;
+using PboWasm.Services.Entities;
 
-namespace PboWasm.Api.Data;
+namespace PboWasm.Services.Data;
 
 public class AppDbContext : DbContext
 {

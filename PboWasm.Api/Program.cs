@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using PboWasm.Api.Data;
-using PboWasm.Api.Models;
 using PboWasm.Api.Endpoints;
-using PboWasm.Api.Services;
-using PboWasm.Models;
+using PboWasm.Services;
+using PboWasm.Services.Data;
+using PboWasm.Services.Email;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,8 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Injection de dépendance pour l'envoi d'emails (On utilise le simulateur pour l'instant)
+// Injection de dépendance pour l'envoi d'emails et la logique
 builder.Services.AddScoped<IEmailService, DevEmailService>();
+builder.Services.AddScoped<AuthService>();
 
 // Add CORS so the Blazor app can talk to the API
 builder.Services.AddCors(options =>

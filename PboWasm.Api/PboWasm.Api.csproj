@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PboWasm.Models\PboWasm.Models.csproj" />
+    <ProjectReference Include="..\PboWasm.Services\PboWasm.Services.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,48 +1,151 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "build-css",
-            "type": "shell",
-            "command": "npm run build:css",
-            "options": {
-                "cwd": "${workspaceFolder}/PboWasm.Web"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "watch-css",
-            "type": "shell",
-            "command": "npm run watch:css",
-            "options": {
-                "cwd": "${workspaceFolder}/PboWasm.Web"
-            },
-            "isBackground": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "build",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
-                "${workspaceFolder}/PboWasm.Web/PboWasm.Web.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary;ForceNoColor"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "build-api",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
-                "${workspaceFolder}/PboWasm.Api/PboWasm.Api.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary;ForceNoColor"
-            ],
-            "problemMatcher": "$msCompile"
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-css",
+      "type": "shell",
+      "command": "npm run build:css",
+      "options": {
+        "cwd": "${workspaceFolder}/PboWasm.Web"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "watch-css",
+      "type": "shell",
+      "command": "npm run watch:css",
+      "options": {
+        "cwd": "${workspaceFolder}/PboWasm.Web"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "build-web",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/PboWasm.Web/PboWasm.Web.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoColor"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build-functions",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/PboWasm.Functions/PboWasm.Functions.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoColor"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build-api",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/PboWasm.Api/PboWasm.Api.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoColor"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "run-functions",
+      "type": "shell",
+      "command": "func start",
+      "options": {
+        "cwd": "${workspaceFolder}/PboWasm.Functions"
+      },
+      "isBackground": true,
+      "problemMatcher": "$func-node-watch",
+      "dependsOn": "build-functions"
+    },
+    {
+      "label": "clean (functions)",
+      "command": "dotnet",
+      "args": [
+        "clean",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "type": "process",
+      "problemMatcher": "$msCompile",
+      "options": {
+        "cwd": "${workspaceFolder}/PboWasm.Functions"
+      }
+    },
+    {
+      "label": "build (functions)",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "type": "process",
+      "dependsOn": "clean (functions)",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile",
+      "options": {
+        "cwd": "${workspaceFolder}/PboWasm.Functions"
+      }
+    },
+    {
+      "label": "clean release (functions)",
+      "command": "dotnet",
+      "args": [
+        "clean",
+        "--configuration",
+        "Release",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "type": "process",
+      "problemMatcher": "$msCompile",
+      "options": {
+        "cwd": "${workspaceFolder}/PboWasm.Functions"
+      }
+    },
+    {
+      "label": "publish (functions)",
+      "command": "dotnet",
+      "args": [
+        "publish",
+        "--configuration",
+        "Release",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "type": "process",
+      "dependsOn": "clean release (functions)",
+      "problemMatcher": "$msCompile",
+      "options": {
+        "cwd": "${workspaceFolder}/PboWasm.Functions"
+      }
+    },
+    {
+      "type": "func",
+      "dependsOn": "build (functions)",
+      "options": {
+        "cwd": "${workspaceFolder}/PboWasm.Functions/bin/Debug/net10.0"
+      },
+      "command": "host start",
+      "args": [
+        "--dotnet-isolated-debug",
+        "--enable-json-output"
+      ],
+      "isBackground": true,
+      "problemMatcher": "$func-dotnet-watch"
+    }
+  ]
 }

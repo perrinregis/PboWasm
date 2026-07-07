@@ -1,5 +1,7 @@
 <Solution>
+  <Project Path="PboWasm.Functions/PboWasm.Functions.csproj" />
   <Project Path="PboWasm.Models/PboWasm.Models.csproj" />
+  <Project Path="PboWasm.Services/PboWasm.Services.csproj" />
   <Project Path="PboWasm.Web/PboWasm.Web.csproj" />
   <Project Path="PboWasm.Api/PboWasm.Api.csproj" />
 </Solution>
