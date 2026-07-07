@@ -1,0 +1,11 @@
+{
+    "commands": {
+        "Pull origin develop": "git pull origin develop",
+        "Build Release": "dotnet build --configuration Release",
+        "Build Debug": "dotnet build --configuration Debug",
+        "Publish Debug": "dotnet publish -c Debug -o ./publish",
+        "Publish Release": "dotnet publish -c Release -o ./publish",
+        "Antigravity": "agy",
+        "Agy Usage" : "antigravity-usage"
+    }
+}

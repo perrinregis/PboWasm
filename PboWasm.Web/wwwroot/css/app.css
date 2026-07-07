@@ -3258,6 +3258,10 @@ details.collapse summary::-webkit-details-marker {
   letter-spacing: -0.025em;
 }
 
+.tracking-widest {
+  letter-spacing: 0.1em;
+}
+
 .text-base-content {
   --tw-text-opacity: 1;
   color: var(--fallback-bc,oklch(var(--bc)/var(--tw-text-opacity, 1)));

@@ -28,3 +28,13 @@ public class AuthResponse
     public string Message { get; set; } = string.Empty;
     public string? Token { get; set; }
 }
+
+public class ValidateEmailRequest
+{
+    [Required]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(6, MinimumLength = 6)]
+    public string Code { get; set; } = string.Empty;
+}

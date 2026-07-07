@@ -6,7 +6,7 @@
             "type": "shell",
             "command": "npm run build:css",
             "options": {
-                "cwd": "${workspaceFolder}/PboWasm.Shared"
+                "cwd": "${workspaceFolder}/PboWasm.Web"
             },
             "problemMatcher": []
         },
@@ -15,7 +15,7 @@
             "type": "shell",
             "command": "npm run watch:css",
             "options": {
-                "cwd": "${workspaceFolder}/PboWasm.Shared"
+                "cwd": "${workspaceFolder}/PboWasm.Web"
             },
             "isBackground": true,
             "problemMatcher": []
@@ -33,14 +33,12 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "build-maui-windows",
+            "label": "build-api",
             "command": "dotnet",
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/PboWasm.Maui/PboWasm.Maui.csproj",
-                "-f",
-                "net10.0-windows10.0.19041.0",
+                "${workspaceFolder}/PboWasm.Api/PboWasm.Api.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoColor"
             ],

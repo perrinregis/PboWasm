@@ -7,7 +7,7 @@
     <div class="card w-96 bg-base-100 shadow-xl">
         <div class="card-body">
             <h2 class="card-title justify-center text-2xl mb-4">
-                @(isLogin ? "Connexion" : "Inscription")
+                @GetTitle()
             </h2>
 
             @if (!string.IsNullOrEmpty(errorMessage))
@@ -23,15 +23,25 @@
                 </div>
             }
 
-            <div class="form-control w-full max-w-xs">
-                <label class="label"><span class="label-text">Email</span></label>
-                <input type="email" @bind="email" class="input input-bordered w-full max-w-xs" placeholder="exemple@domaine.com" />
-            </div>
+            @if (currentMode == AuthMode.Validation)
+            {
+                <div class="form-control w-full max-w-xs">
+                    <label class="label"><span class="label-text">Code à 6 chiffres</span></label>
+                    <input type="text" @bind="validationCode" class="input input-bordered w-full max-w-xs text-center text-2xl tracking-widest" placeholder="000000" maxlength="6" />
+                </div>
+            }
+            else
+            {
+                <div class="form-control w-full max-w-xs">
+                    <label class="label"><span class="label-text">Email</span></label>
+                    <input type="email" @bind="email" class="input input-bordered w-full max-w-xs" placeholder="exemple@domaine.com" />
+                </div>
 
-            <div class="form-control w-full max-w-xs mt-4">
-                <label class="label"><span class="label-text">Mot de passe</span></label>
-                <input type="password" @bind="password" class="input input-bordered w-full max-w-xs" placeholder="********" />
-            </div>
+                <div class="form-control w-full max-w-xs mt-4">
+                    <label class="label"><span class="label-text">Mot de passe</span></label>
+                    <input type="password" @bind="password" class="input input-bordered w-full max-w-xs" placeholder="********" />
+                </div>
+            }
 
             <div class="card-actions justify-center mt-6">
                 @if (isLoading)
@@ -43,32 +53,54 @@
                 else
                 {
                     <button class="btn btn-primary w-full" @onclick="SubmitForm">
-                        @(isLogin ? "Se connecter" : "S'inscrire")
+                        @GetButtonText()
                     </button>
                 }
             </div>
 
-            <div class="divider">OU</div>
+            @if (currentMode != AuthMode.Validation)
+            {
+                <div class="divider">OU</div>
 
-            <button class="btn btn-ghost w-full" @onclick="ToggleMode">
-                @(isLogin ? "Créer un compte" : "J'ai déjà un compte")
-            </button>
+                <button class="btn btn-ghost w-full" @onclick="ToggleMode">
+                    @(currentMode == AuthMode.Login ? "Créer un compte" : "J'ai déjà un compte")
+                </button>
+            }
         </div>
     </div>
 </div>
 
 @code {
-    private bool isLogin = true;
+    private enum AuthMode { Login, Register, Validation }
+    private AuthMode currentMode = AuthMode.Login;
+    
     private bool isLoading = false;
     
     private string email = "";
     private string password = "";
+    private string validationCode = "";
     private string errorMessage = "";
     private string successMessage = "";
 
+    private string GetTitle() => currentMode switch
+    {
+        AuthMode.Login => "Connexion",
+        AuthMode.Register => "Inscription",
+        AuthMode.Validation => "Validation Email",
+        _ => ""
+    };
+
+    private string GetButtonText() => currentMode switch
+    {
+        AuthMode.Login => "Se connecter",
+        AuthMode.Register => "S'inscrire",
+        AuthMode.Validation => "Valider le code",
+        _ => ""
+    };
+
     private void ToggleMode()
     {
-        isLogin = !isLogin;
+        currentMode = currentMode == AuthMode.Login ? AuthMode.Register : AuthMode.Login;
         errorMessage = "";
         successMessage = "";
     }
@@ -81,10 +113,9 @@
 
         try
         {
-            // IMPORTANT: Dans un vrai projet, l'URL de base serait configurée dynamiquement
-            var apiUrl = "https://localhost:7261"; // L'URL de l'API locale (à adapter selon le port de Visual Studio)
+            var apiUrl = "https://localhost:7261";
 
-            if (isLogin)
+            if (currentMode == AuthMode.Login)
             {
                 var req = new LoginRequest { Email = email, Password = password };
                 var res = await Http.PostAsJsonAsync($"{apiUrl}/api/login", req);
@@ -93,14 +124,14 @@
                 if (result != null && result.Success)
                 {
                     await LocalStorage.SetItemAsync("AuthToken", result.Token);
-                    successMessage = result.Message + " (Token sauvegardé dans LocalStorage !)";
+                    successMessage = result.Message + " (Token sauvegardé !)";
                 }
                 else
                 {
                     errorMessage = result?.Message ?? "Erreur inconnue";
                 }
             }
-            else
+            else if (currentMode == AuthMode.Register)
             {
                 var req = new RegisterRequest { Email = email, Password = password };
                 var res = await Http.PostAsJsonAsync($"{apiUrl}/api/register", req);
@@ -109,7 +140,24 @@
                 if (result != null && result.Success)
                 {
                     successMessage = result.Message;
-                    isLogin = true; // Bascule sur la vue connexion
+                    currentMode = AuthMode.Validation; // Passe à l'écran de validation
+                }
+                else
+                {
+                    errorMessage = result?.Message ?? "Erreur inconnue";
+                }
+            }
+            else if (currentMode == AuthMode.Validation)
+            {
+                var req = new ValidateEmailRequest { Email = email, Code = validationCode };
+                var res = await Http.PostAsJsonAsync($"{apiUrl}/api/validate-email", req);
+                var result = await res.Content.ReadFromJsonAsync<AuthResponse>();
+
+                if (result != null && result.Success)
+                {
+                    successMessage = result.Message;
+                    currentMode = AuthMode.Login; // Retour à la connexion une fois validé
+                    password = ""; // On efface le mot de passe par sécurité
                 }
                 else
                 {
