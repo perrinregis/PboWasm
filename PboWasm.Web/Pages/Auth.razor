@@ -1,6 +1,8 @@
 @page "/auth"
 @inject HttpClient Http
+@inject NavigationManager Navigation
 @inject PboWasm.Web.Services.ILocalStorageService LocalStorage
+@inject Microsoft.AspNetCore.Components.WebAssembly.Hosting.IWebAssemblyHostEnvironment Env
 @using PboWasm.Models
 
 <div class="min-h-screen flex items-center justify-center bg-base-200">
@@ -113,7 +115,7 @@
 
         try
         {
-            var apiUrl = "http://localhost:7071";
+            var apiUrl = Env.Environment == "Development" ? "http://localhost:7071" : "";
 
             if (currentMode == AuthMode.Login)
             {
