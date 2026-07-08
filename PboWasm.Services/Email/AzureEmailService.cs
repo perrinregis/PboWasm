@@ -16,7 +16,7 @@ namespace PboWasm.Services.Email
             _senderAddress = senderAddress;
         }
 
-        public async Task SendValidationCodeAsync(string email, string code)
+        public async Task SendValidationEmailAsync(string email, string code)
         {
             try
             {
