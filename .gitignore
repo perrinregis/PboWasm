@@ -1,7 +1,7 @@
 ## Intermediate/Compiled files
 bin/
 obj/
-publish/
+publish*/
 
 ## Dependencies
 node_modules/

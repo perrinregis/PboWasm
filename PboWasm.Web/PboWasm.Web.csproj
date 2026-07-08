@@ -30,11 +30,11 @@
   </Target>
 
   <!-- Workaround for .NET 9/10 static asset fingerprinting on pure static hosts -->
-  <Target Name="FixBlazorWebAssemblyJs" AfterTargets="Publish">
+  <Target Name="FixFingerprint" AfterTargets="Publish">
     <ItemGroup>
-      <HashedBlazorJs Include="$(PublishDir)wwwroot\_framework\blazor.webassembly.*.js" Exclude="$(PublishDir)wwwroot\_framework\blazor.webassembly.js" />
+      <HashedBlazorJs Include="$(PublishDir)wwwroot/_framework/blazor.webassembly.*.js" Exclude="$(PublishDir)wwwroot/_framework/blazor.webassembly.js" />
     </ItemGroup>
-    <Copy SourceFiles="@(HashedBlazorJs)" DestinationFiles="$(PublishDir)wwwroot\_framework\blazor.webassembly.js" Condition="'@(HashedBlazorJs)' != ''" />
+    <Copy SourceFiles="@(HashedBlazorJs)" DestinationFiles="$(PublishDir)wwwroot/_framework/blazor.webassembly.js" Condition="'@(HashedBlazorJs)' != ''" />
   </Target>
 
 </Project>
