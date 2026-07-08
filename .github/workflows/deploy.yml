@@ -1,11 +1,7 @@
 name: Deploy PWA to SmarterASP
 
 on:
-  push:
-    branches:
-      - master
-      - main
-  workflow_dispatch: # Permet de lancer le déploiement manuellement depuis GitHub
+  workflow_dispatch: # Permet de lancer le déploiement UNIQUEMENT manuellement depuis GitHub
 
 jobs:
   build-and-deploy:
