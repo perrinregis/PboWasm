@@ -10,9 +10,22 @@ var host = new HostBuilder()
     .ConfigureFunctionsWebApplication()
     .ConfigureServices(services =>
     {
-        // Enregistrement de notre base de données (SQLite)
+        // Configuration dynamique de la base de données
+        var sqlConnection = Environment.GetEnvironmentVariable("SqlConnectionString");
+        
         services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlite("Data Source=localdev.db"));
+        {
+            if (string.IsNullOrEmpty(sqlConnection))
+            {
+                // Mode Local : Base de données SQLite sur notre PC
+                options.UseSqlite("Data Source=localdev.db");
+            }
+            else
+            {
+                // Mode Azure : Vraie base de données SQL Server hébergée
+                options.UseSqlServer(sqlConnection);
+            }
+        });
 
         // Injection de nos services partagés
         services.AddScoped<IEmailService, DevEmailService>();
