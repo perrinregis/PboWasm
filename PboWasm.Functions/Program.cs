@@ -27,8 +27,21 @@ var host = new HostBuilder()
             }
         });
 
-        // Injection de nos services partagés
-        services.AddScoped<IEmailService, DevEmailService>();
+        // Configuration dynamique de l'Email Service
+        var emailConnectionString = Environment.GetEnvironmentVariable("EmailConnectionString");
+        var emailSender = Environment.GetEnvironmentVariable("EmailSenderAddress");
+        
+        if (!string.IsNullOrEmpty(emailConnectionString) && !string.IsNullOrEmpty(emailSender))
+        {
+            // Mode Azure : on envoie de vrais e-mails
+            services.AddScoped<IEmailService>(sp => new AzureEmailService(emailConnectionString, emailSender));
+        }
+        else
+        {
+            // Mode Local : on simule l'envoi dans la console
+            services.AddScoped<IEmailService, DevEmailService>();
+        }
+
         services.AddScoped<AuthService>();
     })
     .Build();
