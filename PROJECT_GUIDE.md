@@ -8,12 +8,27 @@ Le projet a été divisé en trois parties pour découpler la logique de présen
 
 ```mermaid
 graph TD
+    %% Front-End
     Shared[PboWasm.Shared <br/> RCL - Composants & Styles]
     Web[PboWasm.Web <br/> Blazor WebAssembly]
     Maui[PboWasm.Maui <br/> MAUI Blazor Hybrid]
 
     Web -->|Référence| Shared
     Maui -->|Référence| Shared
+
+    %% Back-End
+    Api[PboWasm.Functions <br/> API Azure Functions]
+    Services[PboWasm.Services <br/> Logique Métier & Data]
+    Models[PboWasm.Models <br/> Contrats partagés]
+    DB[(Base de Données <br/> EF Core)]
+
+    Web -.->|Appels HTTP| Api
+    Maui -.->|Appels HTTP| Api
+    Api -->|Utilise| Services
+    Services -->|Requêtes| DB
+    
+    Shared -.->|Utilise| Models
+    Api -.->|Utilise| Models
 ```
 
 1.  **[PboWasm.Shared](file:///C:/MyDev/PboWasm/PboWasm.Shared)** (Razor Class Library - RCL) :
@@ -26,6 +41,19 @@ graph TD
 3.  **[PboWasm.Maui](file:///C:/MyDev/PboWasm/PboWasm.Maui)** (.NET MAUI Blazor Hybrid) :
     *   Hébergeur et point d'entrée pour les applications mobiles et desktop (actuellement restreint à Windows pour le développement local).
     *   Utilise une `BlazorWebView` qui intègre les composants du projet partagé.
+
+4.  **[PboWasm.Functions](file:///C:/MyDev/PboWasm/PboWasm.Functions)** (API Backend) :
+    *   Projet Azure Functions (Isolated Worker Model en .NET 9).
+    *   Expose les points d'entrée HTTP (API REST) pour le Front-End (ex: `AuthFunctions`).
+    *   Choix technologique idéal pour une infrastructure sans serveur (Serverless) avec un coût quasi-nul sur Azure.
+
+5.  **[PboWasm.Services](file:///C:/MyDev/PboWasm/PboWasm.Services)** (Logique Métier & Accès aux Données) :
+    *   Contient l'intelligence du backend (ex: `AuthService.cs`).
+    *   Gère l'accès aux données via **Entity Framework Core** (`AppDbContext`).
+    *   Gère les services tiers comme l'envoi d'emails via **Azure Communication Services**.
+
+6.  **[PboWasm.Models](file:///C:/MyDev/PboWasm/PboWasm.Models)** (Contrats de Données) :
+    *   Projet contenant les classes C# (DTOs) partagées entre le Front-End (Web/Maui/Shared) et le Back-End (Functions).
 
 ---
 
