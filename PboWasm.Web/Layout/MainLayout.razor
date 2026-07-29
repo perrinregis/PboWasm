@@ -21,7 +21,18 @@
             <ul class="menu menu-horizontal px-1">
                 <li><NavLink href="" Match="NavLinkMatch.All">Home</NavLink></li>
                 <li><NavLink href="counter">Counter</NavLink></li>
-                <li><NavLink href="auth">Connexion</NavLink></li>
+                @if (string.IsNullOrEmpty(userEmail))
+                {
+                    <li><NavLink href="auth">Connexion</NavLink></li>
+                }
+                else
+                {
+                    <li>
+                        <a @onclick="ConfirmLogout" class="cursor-pointer font-semibold text-secondary">
+                            @userEmail
+                        </a>
+                    </li>
+                }
             </ul>
         </div>
     </header>
@@ -48,4 +59,33 @@
     }
 
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    [Inject] private PboWasm.Web.Services.ILocalStorageService LocalStorage { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private string userEmail = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            userEmail = await LocalStorage.GetItemAsync<string>("UserEmail") ?? "";
+        }
+        catch
+        {
+            // Ignore si erreur de parsing ou non trouvé
+        }
+    }
+
+    private async Task ConfirmLogout()
+    {
+        bool confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Voulez-vous déconnecter le compte {userEmail} ?");
+        if (confirm)
+        {
+            await LocalStorage.RemoveItemAsync("AuthToken");
+            await LocalStorage.RemoveItemAsync("UserEmail");
+            userEmail = "";
+            StateHasChanged();
+            Navigation.NavigateTo("/"); 
+        }
+    }
 }

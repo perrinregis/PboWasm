@@ -3029,6 +3029,10 @@ details.collapse summary::-webkit-details-marker {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+.cursor-pointer {
+  cursor: pointer;
+}
+
 .flex-col {
   flex-direction: column;
 }
@@ -3254,6 +3258,10 @@ details.collapse summary::-webkit-details-marker {
   font-weight: 500;
 }
 
+.font-semibold {
+  font-weight: 600;
+}
+
 .tracking-tight {
   letter-spacing: -0.025em;
 }
@@ -3275,6 +3283,11 @@ details.collapse summary::-webkit-details-marker {
 .text-primary-content {
   --tw-text-opacity: 1;
   color: var(--fallback-pc,oklch(var(--pc)/var(--tw-text-opacity, 1)));
+}
+
+.text-secondary {
+  --tw-text-opacity: 1;
+  color: var(--fallback-s,oklch(var(--s)/var(--tw-text-opacity, 1)));
 }
 
 .opacity-0 {

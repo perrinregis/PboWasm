@@ -126,7 +126,9 @@
                 if (result != null && result.Success)
                 {
                     await LocalStorage.SetItemAsync("AuthToken", result.Token);
+                    await LocalStorage.SetItemAsync("UserEmail", email);
                     successMessage = result.Message + " (Token sauvegardé !)";
+                    Navigation.NavigateTo("/", forceLoad: true);
                 }
                 else
                 {

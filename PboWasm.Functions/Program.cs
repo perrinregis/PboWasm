@@ -17,8 +17,8 @@ var host = new HostBuilder()
         {
             if (string.IsNullOrEmpty(sqlConnection))
             {
-                // Mode Local : Base de données SQLite sur notre PC
-                options.UseSqlite("Data Source=localdev.db");
+                // Mode Local : Base de données SQLite dans le dossier PboWasm.Functions
+                options.UseSqlite(@"Data Source=C:\MyDev\PboWasm\PboWasm.Functions\localdev.db");
             }
             else
             {
