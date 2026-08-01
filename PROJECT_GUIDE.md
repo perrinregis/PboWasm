@@ -1,5 +1,14 @@
 # Guide du Projet PboWasm
 
+func start
+http://localhost:7071/
+
+ 1. Lancez l'émulateur SignalR : asrs-emulator start
+  2. Lancez Azure Functions : cd PboWasm.Functions puis func start
+  3. Lancez le Web : cd PboWasm.Web puis dotnet run
+  4. Ouvrez deux onglets sur /chat, cliquez "Lancer un appel" dans l'un des deux !
+
+
 Ce document explique l'architecture technique multi-projets et les choix technologiques de ce projet Blazor.
 
 ## Architecture Globale (Multi-Projets)

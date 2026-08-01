@@ -19,3 +19,11 @@ Thumbs.db
 ## Sensitive info (Web Deploy profiles with passwords)
 Properties/PublishProfiles/*.pubxml
 *.publishSettings
+
+## Azurite (local Azure Storage emulator)
+__blobstorage__/
+__queuestorage__/
+__azurite_db_*
+
+## Azure Functions local settings (contains secrets)
+local.settings.json

@@ -137,7 +137,7 @@
       "type": "func",
       "dependsOn": "build (functions)",
       "options": {
-        "cwd": "${workspaceFolder}/PboWasm.Functions/bin/Debug/net10.0"
+        "cwd": "${workspaceFolder}/PboWasm.Functions/bin/Debug/net9.0"
       },
       "command": "host start",
       "args": [

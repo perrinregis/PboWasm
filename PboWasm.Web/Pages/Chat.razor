@@ -1,0 +1,220 @@
+@page "/chat"
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@inject PboWasm.Web.Services.ILocalStorageService LocalStorage
+@inject Microsoft.AspNetCore.Components.WebAssembly.Hosting.IWebAssemblyHostEnvironment Env
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+
+<div class="flex flex-col h-[calc(100vh-4rem)] p-4 gap-4">
+    <div class="text-2xl font-bold">WebRTC Chat</div>
+
+    @* Status bar *@
+    <div class="flex gap-4">
+        <div class="badge @(signalRConnected ? "badge-success" : "badge-error") gap-2">
+            SignalR: @(signalRConnected ? "Connected" : "Disconnected")
+        </div>
+        <div class="badge @(p2pState == "open" ? "badge-success" : "badge-warning") gap-2">
+            P2P: @(p2pState == "open" ? "Connected" : p2pState)
+        </div>
+    </div>
+
+    @* Action buttons *@
+    <div class="flex gap-2">
+        <button class="btn btn-primary btn-sm" @onclick="StartCall" disabled="@(!signalRConnected || p2pState == "open")">
+            📞 Lancer un appel
+        </button>
+    </div>
+
+    @* Chat messages *@
+    <div class="flex-1 overflow-y-auto bg-base-200 rounded-box p-4 space-y-2" @ref="chatContainer">
+        @foreach (var msg in messages)
+        {
+            <div class="chat @(msg.IsMe ? "chat-end" : "chat-start")">
+                <div class="chat-bubble @(msg.IsMe ? "chat-bubble-primary" : "")">
+                    @msg.Text
+                </div>
+                <div class="chat-footer opacity-50 text-xs">
+                    @msg.Time.ToString("HH:mm:ss")
+                </div>
+            </div>
+        }
+    </div>
+
+    @* Input *@
+    <div class="flex gap-2">
+        <input type="text" @bind="currentMessage" @bind:event="oninput"
+               @onkeydown="HandleKeyDown"
+               class="input input-bordered flex-1"
+               placeholder="Tapez votre message..."
+               disabled="@(p2pState != "open")" />
+        <button class="btn btn-primary" @onclick="SendMessage" disabled="@(p2pState != "open")">
+            Envoyer
+        </button>
+    </div>
+</div>
+
+@code {
+    private HubConnection? hubConnection;
+    private DotNetObjectReference<Chat>? dotnetRef;
+    private ElementReference chatContainer;
+
+    private bool signalRConnected = false;
+    private string p2pState = "Waiting";
+    private string currentMessage = "";
+    private List<ChatMessage> messages = new();
+    private bool isInitiator = false;
+
+    private record ChatMessage(string Text, bool IsMe, DateTime Time);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        dotnetRef = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("webrtcInterop.initialize", dotnetRef);
+
+        var apiUrl = Env.Environment == "Development" ? "http://localhost:7071" : "";
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl($"{apiUrl}/api")
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<string>("ReceiveSignal", async (signalJson) =>
+        {
+            await HandleSignal(signalJson);
+        });
+
+        try
+        {
+            await hubConnection.StartAsync();
+            signalRConnected = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error connecting to SignalR: {ex.Message}");
+        }
+    }
+
+    private async Task StartCall()
+    {
+        isInitiator = true;
+        var offerJson = await JS.InvokeAsync<string>("webrtcInterop.createOffer");
+
+        var signal = System.Text.Json.JsonSerializer.Serialize(new { type = "offer", data = offerJson });
+        await SendSignalToServer(signal);
+
+        AddSystemMessage("Appel lancé, en attente de réponse...");
+    }
+
+    private async Task HandleSignal(string signalJson)
+    {
+        var signal = System.Text.Json.JsonDocument.Parse(signalJson);
+        var type = signal.RootElement.GetProperty("type").GetString();
+        var data = signal.RootElement.GetProperty("data").GetString()!;
+
+        switch (type)
+        {
+            case "offer":
+                if (!isInitiator)
+                {
+                    AddSystemMessage("Appel reçu, connexion...");
+                    var answerJson = await JS.InvokeAsync<string>("webrtcInterop.handleOffer", data);
+                    var answerSignal = System.Text.Json.JsonSerializer.Serialize(new { type = "answer", data = answerJson });
+                    await SendSignalToServer(answerSignal);
+                }
+                break;
+
+            case "answer":
+                if (isInitiator)
+                {
+                    await JS.InvokeVoidAsync("webrtcInterop.handleAnswer", data);
+                }
+                break;
+
+            case "ice-candidate":
+                await JS.InvokeVoidAsync("webrtcInterop.addIceCandidate", data);
+                break;
+        }
+    }
+
+    private async Task SendSignalToServer(string signal)
+    {
+        var apiUrl = Env.Environment == "Development" ? "http://localhost:7071" : "";
+        using var http = new HttpClient();
+        var content = new StringContent(signal, System.Text.Encoding.UTF8, "application/json");
+        await http.PostAsync($"{apiUrl}/api/SendSignal", content);
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(currentMessage)) return;
+
+        var sent = await JS.InvokeAsync<bool>("webrtcInterop.sendMessage", currentMessage);
+        if (sent)
+        {
+            messages.Add(new ChatMessage(currentMessage, true, DateTime.Now));
+            currentMessage = "";
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SendMessage();
+        }
+    }
+
+    private void AddSystemMessage(string text)
+    {
+        messages.Add(new ChatMessage($"⚡ {text}", false, DateTime.Now));
+        StateHasChanged();
+    }
+
+    // === JS Interop Callbacks ===
+
+    [JSInvokable]
+    public async Task OnIceCandidate(string candidateJson)
+    {
+        var signal = System.Text.Json.JsonSerializer.Serialize(new { type = "ice-candidate", data = candidateJson });
+        await SendSignalToServer(signal);
+    }
+
+    [JSInvokable]
+    public void OnConnectionStateChanged(string state)
+    {
+        AddSystemMessage($"Connexion P2P: {state}");
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnDataChannelStateChanged(string state)
+    {
+        p2pState = state;
+        if (state == "open")
+        {
+            AddSystemMessage("Chat P2P connecté ! Les messages passent directement entre vous, sans serveur.");
+        }
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnMessageReceived(string message)
+    {
+        messages.Add(new ChatMessage(message, false, DateTime.Now));
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        dotnetRef?.Dispose();
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
