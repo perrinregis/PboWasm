@@ -74,7 +74,7 @@
         dotnetRef = DotNetObjectReference.Create(this);
         await JS.InvokeVoidAsync("webrtcInterop.initialize", dotnetRef);
 
-        var apiUrl = Env.Environment == "Development" ? "http://localhost:7071" : "";
+        var apiUrl = Env.Environment == "Development" ? "http://localhost:7071" : Navigation.BaseUri.TrimEnd('/');
 
         hubConnection = new HubConnectionBuilder()
             .WithUrl($"{apiUrl}/api")
@@ -142,7 +142,7 @@
 
     private async Task SendSignalToServer(string signal)
     {
-        var apiUrl = Env.Environment == "Development" ? "http://localhost:7071" : "";
+        var apiUrl = Env.Environment == "Development" ? "http://localhost:7071" : Navigation.BaseUri.TrimEnd('/');
         using var http = new HttpClient();
         var content = new StringContent(signal, System.Text.Encoding.UTF8, "application/json");
         await http.PostAsync($"{apiUrl}/api/SendSignal", content);
