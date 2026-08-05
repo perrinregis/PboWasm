@@ -98,12 +98,14 @@
         }
     }
 
+    private string clientId = Guid.NewGuid().ToString();
+
     private async Task StartCall()
     {
         isInitiator = true;
         var offerJson = await JS.InvokeAsync<string>("webrtcInterop.createOffer");
 
-        var signal = System.Text.Json.JsonSerializer.Serialize(new { type = "offer", data = offerJson });
+        var signal = System.Text.Json.JsonSerializer.Serialize(new { type = "offer", data = offerJson, senderId = clientId });
         await SendSignalToServer(signal);
 
         AddSystemMessage("Appel lancé, en attente de réponse...");
@@ -112,6 +114,13 @@
     private async Task HandleSignal(string signalJson)
     {
         var signal = System.Text.Json.JsonDocument.Parse(signalJson);
+        
+        // Ignore nos propres messages
+        if (signal.RootElement.TryGetProperty("senderId", out var senderProp) && senderProp.GetString() == clientId)
+        {
+            return;
+        }
+
         var type = signal.RootElement.GetProperty("type").GetString();
         var data = signal.RootElement.GetProperty("data").GetString()!;
 
@@ -122,7 +131,7 @@
                 {
                     AddSystemMessage("Appel reçu, connexion...");
                     var answerJson = await JS.InvokeAsync<string>("webrtcInterop.handleOffer", data);
-                    var answerSignal = System.Text.Json.JsonSerializer.Serialize(new { type = "answer", data = answerJson });
+                    var answerSignal = System.Text.Json.JsonSerializer.Serialize(new { type = "answer", data = answerJson, senderId = clientId });
                     await SendSignalToServer(answerSignal);
                 }
                 break;
@@ -180,7 +189,7 @@
     [JSInvokable]
     public async Task OnIceCandidate(string candidateJson)
     {
-        var signal = System.Text.Json.JsonSerializer.Serialize(new { type = "ice-candidate", data = candidateJson });
+        var signal = System.Text.Json.JsonSerializer.Serialize(new { type = "ice-candidate", data = candidateJson, senderId = clientId });
         await SendSignalToServer(signal);
     }
 
