@@ -154,7 +154,8 @@
         var apiUrl = Env.Environment == "Development" ? "http://localhost:7071" : Navigation.BaseUri.TrimEnd('/');
         using var http = new HttpClient();
         var content = new StringContent(signal, System.Text.Encoding.UTF8, "application/json");
-        await http.PostAsync($"{apiUrl}/api/SendSignal", content);
+        var response = await http.PostAsync($"{apiUrl}/api/SendSignal", content);
+        response.EnsureSuccessStatusCode();
     }
 
     private async Task SendMessage()
