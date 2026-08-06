@@ -5,7 +5,13 @@ window.qrScanner = {
         const context = canvas.getContext("2d", { willReadFrequently: true });
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: "environment",
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } 
+            });
             video.srcObject = stream;
             video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
             video.play();
@@ -18,7 +24,7 @@ window.qrScanner = {
                         context.drawImage(video, 0, 0, canvas.width, canvas.height);
                         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
                         const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                            inversionAttempts: "dontInvert",
+                            inversionAttempts: "attemptBoth",
                         });
                         if (code) {
                             resolve(code.data);
