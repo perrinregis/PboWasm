@@ -58,6 +58,7 @@
                         banner.classList.remove('hidden');
                         
                         document.getElementById('update-btn').addEventListener('click', () => {
+                            banner.classList.add('hidden');
                             newWorker.postMessage({ type: 'SKIP_WAITING' });
                         });
                     }

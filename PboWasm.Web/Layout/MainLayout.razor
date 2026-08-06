@@ -1,68 +1,116 @@
 @inherits LayoutComponentBase
 
-<div class="min-h-screen bg-base-200 flex flex-col">
-    <!-- Navbar -->
-    <header class="navbar bg-primary text-primary-content shadow-lg z-10">
-        <div class="flex-1 px-4">
-            <a href="/" class="text-xl font-bold tracking-tight">PboWasm POC</a>
-        </div>
-        <div class="flex-none gap-2">
-            <select class="select select-ghost select-sm text-primary-content focus:text-base-content" @onchange="ChangeTheme">
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-                <option value="cupcake">Cupcake</option>
-                <option value="retro">Retro</option>
-                <option value="cyberpunk">Cyberpunk</option>
-                <option value="valentine">Valentine</option>
-                <option value="aqua">Aqua</option>
-                <option value="dracula">Dracula</option>
-                <option value="nord">Nord</option>
-            </select>
-            <ul class="menu menu-horizontal px-1">
-                <li><NavLink href="" Match="NavLinkMatch.All">Home</NavLink></li>
-                <li><NavLink href="chat">Chat P2P</NavLink></li>
+<div class="drawer">
+    <input id="main-drawer" type="checkbox" class="drawer-toggle" @bind="isDrawerOpen" />
+    <div class="drawer-content flex flex-col h-screen overflow-hidden bg-base-200">
+        <!-- Top Navbar -->
+        <header class="navbar bg-primary text-primary-content shadow-lg z-20 flex-none">
+            <div class="navbar-start">
+                <label for="main-drawer" class="btn btn-ghost btn-circle drawer-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                    </svg>
+                </label>
+            </div>
+            <div class="navbar-center">
+                <a class="btn btn-ghost normal-case text-xl font-bold tracking-widest">NoKeMaRe</a>
+            </div>
+            <div class="navbar-end">
                 @if (string.IsNullOrEmpty(userEmail))
                 {
-                    <li><NavLink href="auth">Connexion</NavLink></li>
+                    <a href="auth" class="btn btn-ghost btn-circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                    </a>
                 }
                 else
                 {
-                    <li>
-                        <a @onclick="ConfirmLogout" class="cursor-pointer font-semibold text-secondary">
-                            @userEmail
-                        </a>
-                    </li>
+                    <div class="dropdown dropdown-end">
+                        <label tabindex="0" class="btn btn-ghost btn-circle avatar online placeholder">
+                            <div class="bg-neutral-focus text-neutral-content rounded-full w-10">
+                                <span class="text-xl">@userEmail[0].ToString().ToUpper()</span>
+                            </div>
+                        </label>
+                        <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
+                            <li class="menu-title">
+                                <span class="truncate">@userEmail</span>
+                            </li>
+                            <li><a @onclick="ConfirmLogout" class="text-error font-bold">Déconnexion</a></li>
+                        </ul>
+                    </div>
                 }
-            </ul>
-        </div>
-    </header>
+            </div>
+        </header>
 
-    <main class="flex-grow container mx-auto p-4 md:p-8">
-        @Body
-    </main>
+        <!-- Main Content -->
+        <main class="flex-grow overflow-y-auto p-4 md:p-8 pb-24">
+            @Body
+        </main>
 
-    <footer class="footer footer-center p-4 bg-base-300 text-base-content">
-        <aside>
-            <p>PboWasm - QR & Camera Proof of Concept</p>
-        </aside>
-    </footer>
+        <!-- Bottom Navigation -->
+        <nav class="btm-nav z-50 bg-base-100 border-t border-base-300">
+            <NavLink href="" Match="NavLinkMatch.All" class="text-primary" ActiveClass="active bg-primary/10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span class="btm-nav-label text-xs">Accueil</span>
+            </NavLink>
+            <NavLink href="qrcode" class="text-primary" ActiveClass="active bg-primary/10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="btm-nav-label text-xs">QR Code</span>
+            </NavLink>
+            <NavLink href="chat" class="text-primary" ActiveClass="active bg-primary/10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <span class="btm-nav-label text-xs">Chat</span>
+            </NavLink>
+            <NavLink href="recherche" class="text-primary" ActiveClass="active bg-primary/10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span class="btm-nav-label text-xs">Recherche</span>
+            </NavLink>
+            <NavLink href="parametres" class="text-primary" ActiveClass="active bg-primary/10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span class="btm-nav-label text-xs">Réglages</span>
+            </NavLink>
+        </nav>
+    </div>
+
+    <!-- Sidebar (Drawer Side) -->
+    <div class="drawer-side z-50">
+        <label for="main-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+        <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
+            <!-- Sidebar content here -->
+            <li class="mb-4 text-xl font-bold tracking-widest text-primary p-2">NoKeMaRe</li>
+            <li><NavLink href="" Match="NavLinkMatch.All" @onclick="CloseDrawer">Accueil</NavLink></li>
+            <li><NavLink href="qrcode" @onclick="CloseDrawer">QR Code</NavLink></li>
+            <li><NavLink href="chat" @onclick="CloseDrawer">Chat P2P</NavLink></li>
+            <li><NavLink href="recherche" @onclick="CloseDrawer">Recherche</NavLink></li>
+            <li><NavLink href="parametres" @onclick="CloseDrawer">Paramètres</NavLink></li>
+        </ul>
+    </div>
 </div>
 
 @code {
-    private async Task ChangeTheme(ChangeEventArgs e)
-    {
-        var theme = e.Value?.ToString();
-        if (!string.IsNullOrEmpty(theme))
-        {
-            await JSRuntime.InvokeVoidAsync("themeManager.setTheme", theme);
-        }
-    }
-
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
     [Inject] private PboWasm.Web.Services.ILocalStorageService LocalStorage { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
 
     private string userEmail = "";
+    private bool isDrawerOpen = false;
+
+    private void CloseDrawer()
+    {
+        isDrawerOpen = false;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -70,15 +118,12 @@
         {
             userEmail = await LocalStorage.GetItemAsync<string>("UserEmail") ?? "";
         }
-        catch
-        {
-            // Ignore si erreur de parsing ou non trouvé
-        }
+        catch { }
     }
 
     private async Task ConfirmLogout()
     {
-        bool confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Voulez-vous déconnecter le compte {userEmail} ?");
+        bool confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Voulez-vous vous déconnecter ?");
         if (confirm)
         {
             await LocalStorage.RemoveItemAsync("AuthToken");

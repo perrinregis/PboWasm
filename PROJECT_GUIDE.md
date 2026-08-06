@@ -1,5 +1,7 @@
 # Guide du Projet PboWasm
 
+ Démarrer Azurite (F1 -> Azurite: Start dans VS Code). repond erreur sur http://127.0.0.1:10000/
+
 func start
 http://localhost:7071/
 
