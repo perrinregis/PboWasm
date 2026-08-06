@@ -28,13 +28,43 @@
         <a href="." class="reload">Reload</a>
         <span class="dismiss">🗙</span>
     </div>
+    <div id="update-banner" class="hidden fixed bottom-4 right-4 left-4 md:left-auto z-[9999] bg-primary text-primary-content p-4 rounded-lg shadow-lg flex flex-row items-center justify-between gap-4">
+        <span class="font-bold">Une nouvelle version est disponible ! 🎉</span>
+        <button id="update-btn" class="btn btn-sm btn-secondary">Mettre à jour</button>
+    </div>
+
     <script src="js/jsQR.min.js"></script>
     <script src="js/qrScanner.js"></script>
     <script src="js/themeManager.js"></script>
     <script>window.themeManager.initTheme();</script>
     <script src="js/webrtc.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
-    <script>navigator.serviceWorker.register('service-worker.js');</script>
+    <script>
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+            }
+        });
+
+        navigator.serviceWorker.register('service-worker.js').then(reg => {
+            reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // Nouvelle version prête : on affiche la bannière
+                        const banner = document.getElementById('update-banner');
+                        banner.classList.remove('hidden');
+                        
+                        document.getElementById('update-btn').addEventListener('click', () => {
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                        });
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>
