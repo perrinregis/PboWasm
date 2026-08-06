@@ -113,14 +113,17 @@
 
     private async Task HandleSignal(string signalJson)
     {
+        Console.WriteLine($"[SignalR] Received message: {signalJson}");
         var signal = System.Text.Json.JsonDocument.Parse(signalJson);
         
         // Ignore nos propres messages
         if (signal.RootElement.TryGetProperty("senderId", out var senderProp) && senderProp.GetString() == clientId)
         {
+            Console.WriteLine($"[SignalR] Ignoring our own message (senderId = {clientId})");
             return;
         }
 
+        Console.WriteLine($"[SignalR] Processing message from different sender!");
         var type = signal.RootElement.GetProperty("type").GetString();
         var data = signal.RootElement.GetProperty("data").GetString()!;
 
