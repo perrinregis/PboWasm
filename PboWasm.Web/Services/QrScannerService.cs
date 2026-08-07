@@ -4,7 +4,7 @@ namespace PboWasm.Services;
 
 public interface IQrScannerService
 {
-    Task<string> ScanAsync();
+    Task<string> ScanAsync(bool enableQrScan = true);
     Task<string> CapturePhotoAsync();
 }
 
@@ -17,11 +17,11 @@ public class QrScannerService : IQrScannerService
         _jsRuntime = jsRuntime;
     }
 
-    public async Task<string> ScanAsync()
+    public async Task<string> ScanAsync(bool enableQrScan = true)
     {
         try
         {
-            return await _jsRuntime.InvokeAsync<string>("qrScanner.startScanner", "videoFeed", "qrCanvas");
+            return await _jsRuntime.InvokeAsync<string>("qrScanner.startScanner", "videoFeed", "qrCanvas", enableQrScan);
         }
         catch (Exception ex)
         {

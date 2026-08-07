@@ -3715,11 +3715,6 @@ html:has(.drawer-toggle:checked) {
   stroke: currentColor;
 }
 
-.object-cover {
-  -o-object-fit: cover;
-     object-fit: cover;
-}
-
 .p-2 {
   padding: 0.5rem;
 }
@@ -3958,4 +3953,17 @@ html:has(.drawer-toggle:checked) {
   .md\:p-8 {
     padding: 2rem;
   }
+}
+
+.\[\&\>video\]\:h-full>video {
+  height: 100%;
+}
+
+.\[\&\>video\]\:w-full>video {
+  width: 100%;
+}
+
+.\[\&\>video\]\:object-cover>video {
+  -o-object-fit: cover;
+     object-fit: cover;
 }
