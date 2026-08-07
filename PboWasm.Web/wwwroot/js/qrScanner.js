@@ -1,61 +1,55 @@
 window.qrScanner = {
+    html5QrCode: null,
     startScanner: async (videoElementId, canvasElementId) => {
-        const video = document.getElementById(videoElementId);
-        const canvas = document.getElementById(canvasElementId);
-        const context = canvas.getContext("2d", { willReadFrequently: true });
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    facingMode: "environment",
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                } 
+        return new Promise((resolve, reject) => {
+            if (window.qrScanner.html5QrCode) {
+                return;
+            }
+            window.qrScanner.html5QrCode = new Html5Qrcode(videoElementId);
+            window.qrScanner.html5QrCode.start(
+                { facingMode: "environment" },
+                {
+                    fps: 15,
+                    qrbox: { width: 250, height: 250 }
+                },
+                (decodedText, decodedResult) => {
+                    // Le QR code est détecté avec succès
+                    resolve(decodedText);
+                },
+                (errorMessage) => {
+                    // Ignorer les erreurs d'analyse (déclenché pour chaque image sans QR code)
+                }
+            ).catch(err => {
+                console.error("Erreur Html5Qrcode:", err);
+                reject(err.message || err);
             });
-            video.srcObject = stream;
-            video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
-            video.play();
-            
-            return new Promise((resolve) => {
-                const tick = () => {
-                    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                        canvas.height = video.videoHeight;
-                        canvas.width = video.videoWidth;
-                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                            inversionAttempts: "attemptBoth",
-                        });
-                        if (code) {
-                            resolve(code.data);
-                            return;
-                        }
-                    }
-                    requestAnimationFrame(tick);
-                };
-                requestAnimationFrame(tick);
-            });
-        } catch (err) {
-            console.error("Error accessing camera:", err);
-            throw err;
-        }
+        });
     },
-    stopScanner: (videoElementId) => {
-        const video = document.getElementById(videoElementId);
-        if (video && video.srcObject) {
-            video.srcObject.getTracks().forEach(track => track.stop());
-            video.srcObject = null;
+    stopScanner: async (videoElementId) => {
+        if (window.qrScanner.html5QrCode) {
+            try {
+                await window.qrScanner.html5QrCode.stop();
+                window.qrScanner.html5QrCode.clear();
+            } catch (err) {
+                console.error("Failed to stop scanner", err);
+            } finally {
+                window.qrScanner.html5QrCode = null;
+            }
         }
     },
     capturePhoto: (videoElementId, canvasElementId) => {
-        const video = document.getElementById(videoElementId);
-        const canvas = document.getElementById(canvasElementId);
-        const context = canvas.getContext("2d");
-        
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        return canvas.toDataURL("image/png");
+        const container = document.getElementById(videoElementId);
+        if (container) {
+            const video = container.querySelector('video');
+            if (video) {
+                const canvas = document.createElement("canvas");
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext("2d");
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                return canvas.toDataURL("image/png");
+            }
+        }
+        return null;
     }
 };
