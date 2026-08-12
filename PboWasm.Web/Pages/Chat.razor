@@ -7,65 +7,140 @@
 @implements IAsyncDisposable
 
 <div class="flex flex-col h-[calc(100vh-4rem)] p-4 gap-4">
-    <div class="text-2xl font-bold">WebRTC Chat</div>
-
-    @* Status bar *@
-    <div class="flex gap-4">
+    <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-bold">WebRTC Chat</h2>
         <div class="badge @(signalRConnected ? "badge-success" : "badge-error") gap-2">
-            SignalR: @(signalRConnected ? "Connected" : "Disconnected")
-        </div>
-        <div class="badge @(p2pState == "open" ? "badge-success" : "badge-warning") gap-2">
-            P2P: @(p2pState == "open" ? "Connected" : p2pState)
+            SignalR: @(signalRConnected ? "Connecté" : "Déconnecté")
         </div>
     </div>
 
-    @* Action buttons *@
-    <div class="flex gap-2">
-        <button class="btn btn-primary btn-sm" @onclick="StartCall" disabled="@(!signalRConnected || p2pState == "open")">
-            📞 Lancer un appel
-        </button>
-    </div>
+    @if (!signalRConnected)
+    {
+        <div class="flex-1 flex flex-col items-center justify-center gap-4">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+            <p class="text-lg font-semibold text-base-content/70">Connexion au serveur NoKeMaRe...</p>
+        </div>
+    }
+    else if (selectedUser == null)
+    {
+        <div class="flex-1 bg-base-200 rounded-box p-4 shadow-inner">
+            <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                <div class="w-3 h-3 bg-success rounded-full animate-pulse"></div>
+                Contacts en ligne
+            </h3>
+            
+            @if (onlineUsers.Count == 0)
+            {
+                <div class="text-center opacity-50 py-10">Personne d'autre n'est connecté pour le moment.</div>
+            }
+            else
+            {
+                <div class="grid gap-2">
+                    @foreach (var user in onlineUsers)
+                    {
+                        <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-base-300" @onclick="() => SelectUser(user)">
+                            <div class="card-body p-4 flex-row items-center gap-4">
+                                <div class="avatar placeholder">
+                                    <div class="bg-neutral-focus text-neutral-content rounded-full w-12">
+                                        <span class="text-xl">@user[0].ToString().ToUpper()</span>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold">@user</h4>
+                                    <p class="text-xs opacity-70">Appuyez pour discuter</p>
+                                </div>
+                                <button class="btn btn-primary btn-sm btn-circle">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="flex items-center gap-2 mb-2">
+            <button class="btn btn-ghost btn-sm btn-circle" @onclick="BackToContacts">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <h3 class="font-bold text-lg">Chat avec @selectedUser</h3>
+            <div class="ml-auto badge @(p2pState == "open" ? "badge-success" : "badge-warning") badge-sm">
+                @(p2pState == "open" ? "P2P Actif" : p2pState)
+            </div>
+        </div>
 
-    @* Chat messages *@
-    <div class="flex-1 overflow-y-auto bg-base-200 rounded-box p-4 space-y-2" @ref="chatContainer">
-        @foreach (var msg in messages)
+        @if (p2pState != "open")
         {
-            <div class="chat @(msg.IsMe ? "chat-end" : "chat-start")">
-                <div class="chat-bubble @(msg.IsMe ? "chat-bubble-primary" : "")">
-                    @msg.Text
-                </div>
-                <div class="chat-footer opacity-50 text-xs">
-                    @msg.Time.ToString("HH:mm:ss")
-                </div>
+            <div class="alert alert-info shadow-lg py-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>
+                    @if (isInitiator) { <text>Appel de @selectedUser en cours...</text> }
+                    else { <text>En attente d'une connexion P2P avec @selectedUser...</text> }
+                </span>
             </div>
         }
-    </div>
 
-    @* Input *@
-    <div class="flex gap-2">
-        <input type="text" @bind="currentMessage" @bind:event="oninput"
-               @onkeydown="HandleKeyDown"
-               class="input input-bordered flex-1"
-               placeholder="Tapez votre message..."
-               disabled="@(p2pState != "open")" />
-        <button class="btn btn-primary" @onclick="SendMessage" disabled="@(p2pState != "open")">
-            Envoyer
-        </button>
-    </div>
+        <div class="flex-1 overflow-y-auto bg-base-200 rounded-box p-4 space-y-2 flex flex-col">
+            @foreach (var msg in messages)
+            {
+                <div class="chat @(msg.IsMe ? "chat-end" : "chat-start")">
+                    <div class="chat-bubble @(msg.IsMe ? "chat-bubble-primary" : "") @(msg.IsSystem ? "chat-bubble-info text-xs italic" : "")">
+                        @msg.Text
+                    </div>
+                    <div class="chat-footer opacity-50 text-[10px] mt-1">
+                        @msg.Time.ToString("HH:mm:ss")
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="flex gap-2">
+            <input type="text" @bind="currentMessage" @bind:event="oninput"
+                   @onkeydown="HandleKeyDown"
+                   class="input input-bordered flex-1"
+                   placeholder="Tapez votre message..."
+                   disabled="@(p2pState != "open")" />
+            <button class="btn btn-primary" @onclick="SendMessage" disabled="@(p2pState != "open")">
+                Envoyer
+            </button>
+        </div>
+    }
 </div>
 
 @code {
     private HubConnection? hubConnection;
     private DotNetObjectReference<Chat>? dotnetRef;
-    private ElementReference chatContainer;
 
     private bool signalRConnected = false;
     private string p2pState = "Waiting";
     private string currentMessage = "";
     private List<ChatMessage> messages = new();
     private bool isInitiator = false;
+    
+    private string myEmail = "";
+    private string? selectedUser = null;
+    private HashSet<string> onlineUsers = new();
 
-    private record ChatMessage(string Text, bool IsMe, DateTime Time);
+    private record ChatMessage(string Text, bool IsMe, DateTime Time, bool IsSystem = false);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            myEmail = await LocalStorage.GetItemAsync<string>("UserEmail") ?? "";
+            if (string.IsNullOrEmpty(myEmail)) 
+            {
+                myEmail = "Anonyme_" + Guid.NewGuid().ToString()[..4];
+            }
+        }
+        catch { }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -90,6 +165,14 @@
         {
             await hubConnection.StartAsync();
             signalRConnected = true;
+            
+            // Announce presence
+            await SendSignalToServer(System.Text.Json.JsonSerializer.Serialize(new 
+            { 
+                type = "presence_announce", 
+                senderEmail = myEmail 
+            }));
+            
             StateHasChanged();
         }
         catch (Exception ex)
@@ -98,56 +181,118 @@
         }
     }
 
-    private string clientId = Guid.NewGuid().ToString();
-
-    private async Task StartCall()
+    private async Task SelectUser(string targetEmail)
     {
+        selectedUser = targetEmail;
+        messages.Clear();
+        p2pState = "Connecting";
         isInitiator = true;
+        
+        // Disconnect existing call in JS if any (TODO in JS ideally, but let's just initialize a new one)
+        // For now, reloading the connection logic works because JS replaces peerConnection.
+        
         var offerJson = await JS.InvokeAsync<string>("webrtcInterop.createOffer");
 
-        var signal = System.Text.Json.JsonSerializer.Serialize(new { type = "offer", data = offerJson, senderId = clientId });
+        var signal = System.Text.Json.JsonSerializer.Serialize(new 
+        { 
+            type = "offer", 
+            data = offerJson, 
+            senderEmail = myEmail,
+            targetEmail = selectedUser
+        });
         await SendSignalToServer(signal);
 
-        AddSystemMessage("Appel lancé, en attente de réponse...");
+        AddSystemMessage($"Appel envoyé à {selectedUser}...");
+    }
+    
+    private void BackToContacts()
+    {
+        selectedUser = null;
+        p2pState = "Waiting";
+        messages.Clear();
+        // In a real app we'd also close the WebRTC connection here
     }
 
     private async Task HandleSignal(string signalJson)
     {
-        Console.WriteLine($"[SignalR] Received message: {signalJson}");
         var signal = System.Text.Json.JsonDocument.Parse(signalJson);
+        var type = signal.RootElement.GetProperty("type").GetString();
         
-        // Ignore nos propres messages
-        if (signal.RootElement.TryGetProperty("senderId", out var senderProp) && senderProp.GetString() == clientId)
+        var senderEmail = signal.RootElement.TryGetProperty("senderEmail", out var s) ? s.GetString() : "";
+        if (senderEmail == myEmail) return; // Ignore nos propres messages
+
+        // Présence
+        if (type == "presence_announce")
         {
-            Console.WriteLine($"[SignalR] Ignoring our own message (senderId = {clientId})");
+            if (!string.IsNullOrEmpty(senderEmail))
+            {
+                onlineUsers.Add(senderEmail);
+                StateHasChanged();
+                
+                // Répondre pour qu'il nous voit aussi
+                await SendSignalToServer(System.Text.Json.JsonSerializer.Serialize(new 
+                { 
+                    type = "presence_reply", 
+                    senderEmail = myEmail,
+                    targetEmail = senderEmail
+                }));
+            }
+            return;
+        }
+        
+        if (type == "presence_reply")
+        {
+            var targetEmail = signal.RootElement.TryGetProperty("targetEmail", out var t) ? t.GetString() : "";
+            if (targetEmail == myEmail && !string.IsNullOrEmpty(senderEmail))
+            {
+                onlineUsers.Add(senderEmail);
+                StateHasChanged();
+            }
             return;
         }
 
-        Console.WriteLine($"[SignalR] Processing message from different sender!");
-        var type = signal.RootElement.GetProperty("type").GetString();
+        // WebRTC Signaling
+        var targetEmailWebRtc = signal.RootElement.TryGetProperty("targetEmail", out var tW) ? tW.GetString() : "";
+        if (targetEmailWebRtc != myEmail) return; // Ce n'est pas pour nous
+
         var data = signal.RootElement.GetProperty("data").GetString()!;
 
         switch (type)
         {
             case "offer":
-                if (!isInitiator)
+                if (selectedUser == null || selectedUser != senderEmail)
                 {
-                    AddSystemMessage("Appel reçu, connexion...");
-                    var answerJson = await JS.InvokeAsync<string>("webrtcInterop.handleOffer", data);
-                    var answerSignal = System.Text.Json.JsonSerializer.Serialize(new { type = "answer", data = answerJson, senderId = clientId });
-                    await SendSignalToServer(answerSignal);
+                    // Quelqu'un nous appelle !
+                    selectedUser = senderEmail;
+                    isInitiator = false;
+                    messages.Clear();
+                    AddSystemMessage($"{senderEmail} vous appelle...");
+                    StateHasChanged();
                 }
+                
+                var answerJson = await JS.InvokeAsync<string>("webrtcInterop.handleOffer", data);
+                var answerSignal = System.Text.Json.JsonSerializer.Serialize(new 
+                { 
+                    type = "answer", 
+                    data = answerJson, 
+                    senderEmail = myEmail,
+                    targetEmail = senderEmail
+                });
+                await SendSignalToServer(answerSignal);
                 break;
 
             case "answer":
-                if (isInitiator)
+                if (isInitiator && selectedUser == senderEmail)
                 {
                     await JS.InvokeVoidAsync("webrtcInterop.handleAnswer", data);
                 }
                 break;
 
             case "ice-candidate":
-                await JS.InvokeVoidAsync("webrtcInterop.addIceCandidate", data);
+                if (selectedUser == senderEmail)
+                {
+                    await JS.InvokeVoidAsync("webrtcInterop.addIceCandidate", data);
+                }
                 break;
         }
     }
@@ -163,7 +308,7 @@
 
     private async Task SendMessage()
     {
-        if (string.IsNullOrWhiteSpace(currentMessage)) return;
+        if (string.IsNullOrWhiteSpace(currentMessage) || p2pState != "open") return;
 
         var sent = await JS.InvokeAsync<bool>("webrtcInterop.sendMessage", currentMessage);
         if (sent)
@@ -184,24 +329,29 @@
 
     private void AddSystemMessage(string text)
     {
-        messages.Add(new ChatMessage($"⚡ {text}", false, DateTime.Now));
+        messages.Add(new ChatMessage(text, false, DateTime.Now, true));
         StateHasChanged();
     }
-
-    // === JS Interop Callbacks ===
 
     [JSInvokable]
     public async Task OnIceCandidate(string candidateJson)
     {
-        var signal = System.Text.Json.JsonSerializer.Serialize(new { type = "ice-candidate", data = candidateJson, senderId = clientId });
+        if (string.IsNullOrEmpty(selectedUser)) return;
+        
+        var signal = System.Text.Json.JsonSerializer.Serialize(new 
+        { 
+            type = "ice-candidate", 
+            data = candidateJson, 
+            senderEmail = myEmail,
+            targetEmail = selectedUser
+        });
         await SendSignalToServer(signal);
     }
 
     [JSInvokable]
     public void OnConnectionStateChanged(string state)
     {
-        AddSystemMessage($"Connexion P2P: {state}");
-        StateHasChanged();
+        Console.WriteLine($"P2P State: {state}");
     }
 
     [JSInvokable]
@@ -210,7 +360,11 @@
         p2pState = state;
         if (state == "open")
         {
-            AddSystemMessage("Chat P2P connecté ! Les messages passent directement entre vous, sans serveur.");
+            AddSystemMessage("Connexion sécurisée établie.");
+        }
+        else if (state == "closed" || state == "disconnected")
+        {
+            AddSystemMessage("Connexion terminée.");
         }
         StateHasChanged();
     }
