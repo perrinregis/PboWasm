@@ -1,27 +1,39 @@
 @page "/chat"
-@inject IJSRuntime JS
-@inject NavigationManager Navigation
-@inject PboWasm.Web.Services.ILocalStorageService LocalStorage
-@inject Microsoft.AspNetCore.Components.WebAssembly.Hosting.IWebAssemblyHostEnvironment Env
-@using Microsoft.AspNetCore.SignalR.Client
-@implements IAsyncDisposable
+@inject PboWasm.Web.Services.ChatService ChatService
+@implements IDisposable
 
 <div class="flex flex-col h-[calc(100vh-4rem)] p-4 gap-4">
     <div class="flex justify-between items-center">
         <h2 class="text-2xl font-bold">WebRTC Chat</h2>
-        <div class="badge @(signalRConnected ? "badge-success" : "badge-error") gap-2">
-            SignalR: @(signalRConnected ? "Connecté" : "Déconnecté")
-        </div>
+        @if (ChatService.IsAuthenticated)
+        {
+            <div class="badge @(ChatService.SignalRConnected ? "badge-success" : "badge-error") gap-2">
+                SignalR: @(ChatService.SignalRConnected ? "Connecté" : "Déconnecté")
+            </div>
+        }
     </div>
 
-    @if (!signalRConnected)
+    @if (!ChatService.IsAuthenticated && ChatService.MyEmail == "")
+    {
+        <div class="flex-1 flex flex-col items-center justify-center gap-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-primary opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <div class="text-center">
+                <h3 class="text-xl font-bold mb-2">Accès réservé</h3>
+                <p class="text-base-content/70 max-w-sm mb-6">Vous devez être connecté à votre compte pour accéder à la messagerie sécurisée NoKeMaRe.</p>
+                <a href="auth" class="btn btn-primary px-8 rounded-full shadow-lg">Se connecter ou s'inscrire</a>
+            </div>
+        </div>
+    }
+    else if (!ChatService.SignalRConnected)
     {
         <div class="flex-1 flex flex-col items-center justify-center gap-4">
             <span class="loading loading-spinner loading-lg text-primary"></span>
             <p class="text-lg font-semibold text-base-content/70">Connexion au serveur NoKeMaRe...</p>
         </div>
     }
-    else if (selectedUser == null)
+    else if (ChatService.SelectedUser == null)
     {
         <div class="flex-1 bg-base-200 rounded-box p-4 shadow-inner">
             <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
@@ -29,16 +41,16 @@
                 Contacts en ligne
             </h3>
             
-            @if (onlineUsers.Count == 0)
+            @if (ChatService.OnlineUsers.Count == 0)
             {
                 <div class="text-center opacity-50 py-10">Personne d'autre n'est connecté pour le moment.</div>
             }
             else
             {
                 <div class="grid gap-2">
-                    @foreach (var user in onlineUsers)
+                    @foreach (var user in ChatService.OnlineUsers)
                     {
-                        <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-base-300" @onclick="() => SelectUser(user)">
+                        <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-base-300" @onclick="() => ChatService.SelectUserAsync(user)">
                             <div class="card-body p-4 flex-row items-center gap-4">
                                 <div class="avatar placeholder">
                                     <div class="bg-neutral-focus text-neutral-content rounded-full w-12">
@@ -64,34 +76,41 @@
     else
     {
         <div class="flex items-center gap-2 mb-2">
-            <button class="btn btn-ghost btn-sm btn-circle" @onclick="BackToContacts">
+            <button class="btn btn-ghost btn-sm btn-circle" @onclick="ChatService.BackToContacts">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
             </button>
-            <h3 class="font-bold text-lg">Chat avec @selectedUser</h3>
-            <div class="ml-auto badge @(p2pState == "open" ? "badge-success" : "badge-warning") badge-sm">
-                @(p2pState == "open" ? "P2P Actif" : p2pState)
+            <h3 class="font-bold text-lg">Chat avec @ChatService.SelectedUser</h3>
+            <div class="ml-auto badge @(ChatService.P2pState == "open" ? "badge-success" : "badge-warning") badge-sm">
+                @(ChatService.P2pState == "open" ? "P2P Actif" : ChatService.P2pState)
             </div>
         </div>
 
-        @if (p2pState != "open")
+        @if (ChatService.P2pState != "open")
         {
             <div class="alert alert-info shadow-lg py-2">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <span>
-                    @if (isInitiator) { <text>Appel de @selectedUser en cours...</text> }
-                    else { <text>En attente d'une connexion P2P avec @selectedUser...</text> }
+                    @if (ChatService.IsInitiator) { <text>Appel de @ChatService.SelectedUser en cours...</text> }
+                    else { <text>En attente d'une connexion P2P avec @ChatService.SelectedUser...</text> }
                 </span>
             </div>
         }
 
         <div class="flex-1 overflow-y-auto bg-base-200 rounded-box p-4 space-y-2 flex flex-col">
-            @foreach (var msg in messages)
+            @foreach (var msg in ChatService.Messages)
             {
                 <div class="chat @(msg.IsMe ? "chat-end" : "chat-start")">
                     <div class="chat-bubble @(msg.IsMe ? "chat-bubble-primary" : "") @(msg.IsSystem ? "chat-bubble-info text-xs italic" : "")">
-                        @msg.Text
+                        @if (!string.IsNullOrEmpty(msg.ImageUrl))
+                        {
+                            <img src="@msg.ImageUrl" class="max-w-[200px] rounded-lg shadow-sm" />
+                        }
+                        else
+                        {
+                            @msg.Text
+                        }
                     </div>
                     <div class="chat-footer opacity-50 text-[10px] mt-1">
                         @msg.Time.ToString("HH:mm:ss")
@@ -100,13 +119,19 @@
             }
         </div>
 
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-center">
+            <input type="file" id="imageInput" accept="image/*" class="hidden" @onchange='() => ChatService.SendImageFromInputAsync("imageInput")' />
+            <label for="imageInput" class="btn btn-circle btn-ghost" disabled="@(ChatService.P2pState != "open")">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </label>
             <input type="text" @bind="currentMessage" @bind:event="oninput"
                    @onkeydown="HandleKeyDown"
                    class="input input-bordered flex-1"
                    placeholder="Tapez votre message..."
-                   disabled="@(p2pState != "open")" />
-            <button class="btn btn-primary" @onclick="SendMessage" disabled="@(p2pState != "open")">
+                   disabled="@(ChatService.P2pState != "open")" />
+            <button class="btn btn-primary" @onclick="SendMessage" disabled="@(ChatService.P2pState != "open")">
                 Envoyer
             </button>
         </div>
@@ -114,208 +139,25 @@
 </div>
 
 @code {
-    private HubConnection? hubConnection;
-    private DotNetObjectReference<Chat>? dotnetRef;
-
-    private bool signalRConnected = false;
-    private string p2pState = "Waiting";
     private string currentMessage = "";
-    private List<ChatMessage> messages = new();
-    private bool isInitiator = false;
-    
-    private string myEmail = "";
-    private string? selectedUser = null;
-    private HashSet<string> onlineUsers = new();
-
-    private record ChatMessage(string Text, bool IsMe, DateTime Time, bool IsSystem = false);
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            myEmail = await LocalStorage.GetItemAsync<string>("UserEmail") ?? "";
-            if (string.IsNullOrEmpty(myEmail)) 
-            {
-                myEmail = "Anonyme_" + Guid.NewGuid().ToString()[..4];
-            }
-        }
-        catch { }
+        ChatService.OnStateChanged += StateHasChanged;
+        await ChatService.InitializeAsync();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    public void Dispose()
     {
-        if (!firstRender) return;
-
-        dotnetRef = DotNetObjectReference.Create(this);
-        await JS.InvokeVoidAsync("webrtcInterop.initialize", dotnetRef);
-
-        var apiUrl = Env.Environment == "Development" ? "http://localhost:7071" : Navigation.BaseUri.TrimEnd('/');
-
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl($"{apiUrl}/api")
-            .WithAutomaticReconnect()
-            .Build();
-
-        hubConnection.On<string>("ReceiveSignal", async (signalJson) =>
-        {
-            await HandleSignal(signalJson);
-        });
-
-        try
-        {
-            await hubConnection.StartAsync();
-            signalRConnected = true;
-            
-            // Announce presence
-            await SendSignalToServer(System.Text.Json.JsonSerializer.Serialize(new 
-            { 
-                type = "presence_announce", 
-                senderEmail = myEmail 
-            }));
-            
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error connecting to SignalR: {ex.Message}");
-        }
-    }
-
-    private async Task SelectUser(string targetEmail)
-    {
-        selectedUser = targetEmail;
-        messages.Clear();
-        p2pState = "Connecting";
-        isInitiator = true;
-        
-        // Disconnect existing call in JS if any (TODO in JS ideally, but let's just initialize a new one)
-        // For now, reloading the connection logic works because JS replaces peerConnection.
-        
-        var offerJson = await JS.InvokeAsync<string>("webrtcInterop.createOffer");
-
-        var signal = System.Text.Json.JsonSerializer.Serialize(new 
-        { 
-            type = "offer", 
-            data = offerJson, 
-            senderEmail = myEmail,
-            targetEmail = selectedUser
-        });
-        await SendSignalToServer(signal);
-
-        AddSystemMessage($"Appel envoyé à {selectedUser}...");
-    }
-    
-    private void BackToContacts()
-    {
-        selectedUser = null;
-        p2pState = "Waiting";
-        messages.Clear();
-        // In a real app we'd also close the WebRTC connection here
-    }
-
-    private async Task HandleSignal(string signalJson)
-    {
-        var signal = System.Text.Json.JsonDocument.Parse(signalJson);
-        var type = signal.RootElement.GetProperty("type").GetString();
-        
-        var senderEmail = signal.RootElement.TryGetProperty("senderEmail", out var s) ? s.GetString() : "";
-        if (senderEmail == myEmail) return; // Ignore nos propres messages
-
-        // Présence
-        if (type == "presence_announce")
-        {
-            if (!string.IsNullOrEmpty(senderEmail))
-            {
-                onlineUsers.Add(senderEmail);
-                StateHasChanged();
-                
-                // Répondre pour qu'il nous voit aussi
-                await SendSignalToServer(System.Text.Json.JsonSerializer.Serialize(new 
-                { 
-                    type = "presence_reply", 
-                    senderEmail = myEmail,
-                    targetEmail = senderEmail
-                }));
-            }
-            return;
-        }
-        
-        if (type == "presence_reply")
-        {
-            var targetEmail = signal.RootElement.TryGetProperty("targetEmail", out var t) ? t.GetString() : "";
-            if (targetEmail == myEmail && !string.IsNullOrEmpty(senderEmail))
-            {
-                onlineUsers.Add(senderEmail);
-                StateHasChanged();
-            }
-            return;
-        }
-
-        // WebRTC Signaling
-        var targetEmailWebRtc = signal.RootElement.TryGetProperty("targetEmail", out var tW) ? tW.GetString() : "";
-        if (targetEmailWebRtc != myEmail) return; // Ce n'est pas pour nous
-
-        var data = signal.RootElement.GetProperty("data").GetString()!;
-
-        switch (type)
-        {
-            case "offer":
-                if (selectedUser == null || selectedUser != senderEmail)
-                {
-                    // Quelqu'un nous appelle !
-                    selectedUser = senderEmail;
-                    isInitiator = false;
-                    messages.Clear();
-                    AddSystemMessage($"{senderEmail} vous appelle...");
-                    StateHasChanged();
-                }
-                
-                var answerJson = await JS.InvokeAsync<string>("webrtcInterop.handleOffer", data);
-                var answerSignal = System.Text.Json.JsonSerializer.Serialize(new 
-                { 
-                    type = "answer", 
-                    data = answerJson, 
-                    senderEmail = myEmail,
-                    targetEmail = senderEmail
-                });
-                await SendSignalToServer(answerSignal);
-                break;
-
-            case "answer":
-                if (isInitiator && selectedUser == senderEmail)
-                {
-                    await JS.InvokeVoidAsync("webrtcInterop.handleAnswer", data);
-                }
-                break;
-
-            case "ice-candidate":
-                if (selectedUser == senderEmail)
-                {
-                    await JS.InvokeVoidAsync("webrtcInterop.addIceCandidate", data);
-                }
-                break;
-        }
-    }
-
-    private async Task SendSignalToServer(string signal)
-    {
-        var apiUrl = Env.Environment == "Development" ? "http://localhost:7071" : Navigation.BaseUri.TrimEnd('/');
-        using var http = new HttpClient();
-        var content = new StringContent(signal, System.Text.Encoding.UTF8, "application/json");
-        var response = await http.PostAsync($"{apiUrl}/api/SendSignal", content);
-        response.EnsureSuccessStatusCode();
+        ChatService.OnStateChanged -= StateHasChanged;
     }
 
     private async Task SendMessage()
     {
-        if (string.IsNullOrWhiteSpace(currentMessage) || p2pState != "open") return;
-
-        var sent = await JS.InvokeAsync<bool>("webrtcInterop.sendMessage", currentMessage);
-        if (sent)
+        if (!string.IsNullOrWhiteSpace(currentMessage))
         {
-            messages.Add(new ChatMessage(currentMessage, true, DateTime.Now));
+            await ChatService.SendMessageAsync(currentMessage);
             currentMessage = "";
-            StateHasChanged();
         }
     }
 
@@ -324,64 +166,6 @@
         if (e.Key == "Enter")
         {
             await SendMessage();
-        }
-    }
-
-    private void AddSystemMessage(string text)
-    {
-        messages.Add(new ChatMessage(text, false, DateTime.Now, true));
-        StateHasChanged();
-    }
-
-    [JSInvokable]
-    public async Task OnIceCandidate(string candidateJson)
-    {
-        if (string.IsNullOrEmpty(selectedUser)) return;
-        
-        var signal = System.Text.Json.JsonSerializer.Serialize(new 
-        { 
-            type = "ice-candidate", 
-            data = candidateJson, 
-            senderEmail = myEmail,
-            targetEmail = selectedUser
-        });
-        await SendSignalToServer(signal);
-    }
-
-    [JSInvokable]
-    public void OnConnectionStateChanged(string state)
-    {
-        Console.WriteLine($"P2P State: {state}");
-    }
-
-    [JSInvokable]
-    public void OnDataChannelStateChanged(string state)
-    {
-        p2pState = state;
-        if (state == "open")
-        {
-            AddSystemMessage("Connexion sécurisée établie.");
-        }
-        else if (state == "closed" || state == "disconnected")
-        {
-            AddSystemMessage("Connexion terminée.");
-        }
-        StateHasChanged();
-    }
-
-    [JSInvokable]
-    public void OnMessageReceived(string message)
-    {
-        messages.Add(new ChatMessage(message, false, DateTime.Now));
-        StateHasChanged();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        dotnetRef?.Dispose();
-        if (hubConnection is not null)
-        {
-            await hubConnection.DisposeAsync();
         }
     }
 }

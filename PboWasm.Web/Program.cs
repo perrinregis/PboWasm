@@ -10,5 +10,6 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<IQrScannerService, QrScannerService>();
 builder.Services.AddScoped<PboWasm.Web.Services.ILocalStorageService, PboWasm.Web.Services.LocalStorageService>();
 builder.Services.AddScoped<IPermissionService, PboWasm.Web.Services.WebPermissionService>();
+builder.Services.AddScoped<PboWasm.Web.Services.ChatService>();
 
 await builder.Build().RunAsync();

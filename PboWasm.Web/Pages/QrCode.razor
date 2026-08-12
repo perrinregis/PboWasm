@@ -3,6 +3,8 @@
 @inject IQrScannerService QrScannerService
 @inject IPermissionService PermissionService
 @inject IJSRuntime JSRuntime
+@inject PboWasm.Web.Services.ChatService ChatService
+@implements IDisposable
 
 <PageTitle>Scanner QR Code</PageTitle>
 
@@ -87,6 +89,15 @@
                             <img src="@capturedPhoto" alt="Captured Photo" class="w-full rounded-lg shadow-lg border border-base-300" />
                             <button class="btn btn-circle btn-xs btn-error absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity" @onclick="() => capturedPhoto = null">✕</button>
                         </div>
+                        @if (ChatService.P2pState == "open")
+                        {
+                            <button class="btn btn-primary w-full mt-4" @onclick="SendPhotoToChat">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                                Envoyer à @ChatService.SelectedUser
+                            </button>
+                        }
                     </div>
                 </div>
             }
@@ -109,6 +120,16 @@
     private bool enableQrScan = true;
     private string? lastResult;
     private string? capturedPhoto;
+
+    protected override void OnInitialized()
+    {
+        ChatService.OnStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        ChatService.OnStateChanged -= StateHasChanged;
+    }
 
     private bool IsUrl(string text)
     {
@@ -163,5 +184,15 @@
         }
         catch { }
         StateHasChanged();
+    }
+
+    private async Task SendPhotoToChat()
+    {
+        if (!string.IsNullOrEmpty(capturedPhoto) && ChatService.P2pState == "open")
+        {
+            await ChatService.SendBase64ImageAsync(capturedPhoto);
+            capturedPhoto = null; // Hide photo after sending
+            StateHasChanged();
+        }
     }
 }
