@@ -1,0 +1,89 @@
+@page "/wahoo"
+@implements IDisposable
+@inject IJSRuntime JSRuntime
+@using Microsoft.JSInterop
+
+<PageTitle>Wahoo Kickr POC</PageTitle>
+
+<div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-4">Wahoo Kickr Bluetooth POC</h1>
+
+    <p class="mb-4">Cette page permet de valider la connexion Web Bluetooth à un home trainer (ex: Wahoo Kickr) et de lire la puissance.</p>
+
+    <div class="flex gap-4 mb-4">
+        <button class="btn btn-primary" @onclick="ConnectToDevice" disabled="@isConnected">Connecter au Wahoo</button>
+        <button class="btn btn-secondary" @onclick="DisconnectDevice" disabled="@(!isConnected)">Déconnecter</button>
+    </div>
+
+    @if (isConnected)
+    {
+        <div class="mt-4 p-4 border rounded bg-base-200 shadow-md">
+            <h2 class="text-xl font-semibold mb-2">Données en direct</h2>
+            <div class="stat">
+                <div class="stat-title">Puissance Instantanée</div>
+                <div class="stat-value text-primary">@currentPower W</div>
+            </div>
+        </div>
+    }
+
+    <div class="mt-4 p-2 bg-base-300 rounded">
+        <p><strong>Statut :</strong> @statusMessage</p>
+    </div>
+</div>
+
+@code {
+    private bool isConnected = false;
+    private int currentPower = 0;
+    private string statusMessage = "Non connecté. Assurez-vous que le Bluetooth est activé sur votre appareil.";
+    private DotNetObjectReference<Wahoo>? dotNetHelper;
+
+    protected override void OnInitialized()
+    {
+        dotNetHelper = DotNetObjectReference.Create(this);
+    }
+
+    private async Task ConnectToDevice()
+    {
+        statusMessage = "Demande d'appairage Bluetooth en cours...";
+        try
+        {
+            var result = await JSRuntime.InvokeAsync<string>("wahooBluetooth.connect", dotNetHelper);
+            if (result == "Connecté avec succès")
+            {
+                isConnected = true;
+            }
+            statusMessage = result;
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Erreur : {ex.Message}";
+        }
+    }
+
+    private async Task DisconnectDevice()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("wahooBluetooth.disconnect");
+            isConnected = false;
+            currentPower = 0;
+            statusMessage = "Déconnecté";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Erreur déconnexion : {ex.Message}";
+        }
+    }
+
+    [JSInvokable]
+    public void UpdatePower(int power)
+    {
+        currentPower = power;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        dotNetHelper?.Dispose();
+    }
+}
