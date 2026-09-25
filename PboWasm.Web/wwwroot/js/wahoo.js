@@ -7,6 +7,9 @@ window.wahooBluetooth = {
     mockInterval: null,
     mockTargetPower: 150,
     
+    lastCrankRevs: undefined,
+    lastCrankTime: undefined,
+    
     connect: async function (dotNetHelper, useMock = false) {
         this.isMock = useMock;
         
@@ -14,13 +17,15 @@ window.wahooBluetooth = {
             console.log("Démarrage du mode simulation (Mock)...");
             this.mockTargetPower = 150;
             
-            // Simule l'envoi de données de puissance toutes les secondes
             this.mockInterval = setInterval(() => {
-                // Simule une puissance qui fluctue un peu autour de la cible (+/- 5%)
                 let fluctuation = (Math.random() * 0.1 - 0.05) * this.mockTargetPower;
                 let current = Math.round(this.mockTargetPower + fluctuation);
                 if (current < 0) current = 0;
                 dotNetHelper.invokeMethodAsync('UpdatePower', current);
+                
+                // Simule une cadence (env 80-90)
+                let mockCadence = Math.round(70 + (current / 10) + (Math.random() * 4 - 2));
+                dotNetHelper.invokeMethodAsync('UpdateCadence', mockCadence);
             }, 1000);
             
             return "Connecté avec succès (SIMULATEUR)";
@@ -28,7 +33,6 @@ window.wahooBluetooth = {
 
         try {
             console.log("Requesting Bluetooth Device...");
-            // We look for either Cycling Power or Fitness Machine service
             this.device = await navigator.bluetooth.requestDevice({
                 filters: [{ services: ['cycling_power'] }, { services: ['fitness_machine'] }],
                 optionalServices: ['cycling_power', 'fitness_machine']
@@ -37,7 +41,6 @@ window.wahooBluetooth = {
             console.log("Connecting to GATT Server...");
             this.server = await this.device.gatt.connect();
 
-            // 1. Try to get Power Data
             try {
                 console.log("Getting Cycling Power Service...");
                 const cpService = await this.server.getPrimaryService('cycling_power');
@@ -46,8 +49,38 @@ window.wahooBluetooth = {
                 await this.powerCharacteristic.startNotifications();
                 this.powerCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
                     let value = event.target.value;
+                    let flags = value.getUint16(0, true);
                     let power = value.getInt16(2, true);
                     dotNetHelper.invokeMethodAsync('UpdatePower', power);
+
+                    // Parse Cadence (Crank Revolution Data)
+                    let offset = 4;
+                    if ((flags & 1) !== 0) offset += 1; // Pedal Power Balance
+                    if ((flags & 4) !== 0) offset += 2; // Accumulated Torque
+                    if ((flags & 16) !== 0) offset += 6; // Wheel Revolution Data
+
+                    if ((flags & 32) !== 0) { // Crank Revolution Data present
+                        let crankRevs = value.getUint16(offset, true);
+                        let crankTime = value.getUint16(offset + 2, true);
+                        
+                        if (window.wahooBluetooth.lastCrankTime !== undefined) {
+                            let timeDiff = crankTime - window.wahooBluetooth.lastCrankTime;
+                            if (timeDiff < 0) timeDiff += 65536; // Handle overflow
+                            
+                            let revDiff = crankRevs - window.wahooBluetooth.lastCrankRevs;
+                            if (revDiff < 0) revDiff += 65536;
+
+                            if (timeDiff > 0) {
+                                let cadence = Math.round((revDiff * 1024 * 60) / timeDiff);
+                                if (cadence >= 0 && cadence < 300) {
+                                    dotNetHelper.invokeMethodAsync('UpdateCadence', cadence);
+                                }
+                            }
+                        }
+                        
+                        window.wahooBluetooth.lastCrankRevs = crankRevs;
+                        window.wahooBluetooth.lastCrankTime = crankTime;
+                    }
                 });
             } catch (e) {
                 console.warn("Cycling power service not available:", e);
