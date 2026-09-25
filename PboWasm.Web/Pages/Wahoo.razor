@@ -11,7 +11,8 @@
     <p class="mb-4">Cette page permet de valider la connexion Web Bluetooth à un home trainer (ex: Wahoo Kickr) et de lire la puissance.</p>
 
     <div class="flex gap-4 mb-4">
-        <button class="btn btn-primary" @onclick="ConnectToDevice" disabled="@isConnected">Connecter au Wahoo</button>
+        <button class="btn btn-primary" @onclick="() => ConnectToDevice(false)" disabled="@isConnected">Connecter au Wahoo</button>
+        <button class="btn btn-outline btn-primary" @onclick="() => ConnectToDevice(true)" disabled="@isConnected">Tester (Mock)</button>
         <button class="btn btn-secondary" @onclick="DisconnectDevice" disabled="@(!isConnected)">Déconnecter</button>
     </div>
 
@@ -55,13 +56,13 @@
         dotNetHelper = DotNetObjectReference.Create(this);
     }
 
-    private async Task ConnectToDevice()
+    private async Task ConnectToDevice(bool useMock)
     {
-        statusMessage = "Demande d'appairage Bluetooth en cours...";
+        statusMessage = useMock ? "Lancement du mode mock..." : "Demande d'appairage Bluetooth en cours...";
         try
         {
-            var result = await JSRuntime.InvokeAsync<string>("wahooBluetooth.connect", dotNetHelper);
-            if (result == "Connecté avec succès")
+            var result = await JSRuntime.InvokeAsync<string>("wahooBluetooth.connect", dotNetHelper, useMock);
+            if (result.Contains("succès"))
             {
                 isConnected = true;
             }

@@ -3,8 +3,29 @@ window.wahooBluetooth = {
     server: null,
     powerCharacteristic: null,
     controlPointCharacteristic: null,
+    isMock: false,
+    mockInterval: null,
+    mockTargetPower: 150,
     
-    connect: async function (dotNetHelper) {
+    connect: async function (dotNetHelper, useMock = false) {
+        this.isMock = useMock;
+        
+        if (useMock) {
+            console.log("Démarrage du mode simulation (Mock)...");
+            this.mockTargetPower = 150;
+            
+            // Simule l'envoi de données de puissance toutes les secondes
+            this.mockInterval = setInterval(() => {
+                // Simule une puissance qui fluctue un peu autour de la cible (+/- 5%)
+                let fluctuation = (Math.random() * 0.1 - 0.05) * this.mockTargetPower;
+                let current = Math.round(this.mockTargetPower + fluctuation);
+                if (current < 0) current = 0;
+                dotNetHelper.invokeMethodAsync('UpdatePower', current);
+            }, 1000);
+            
+            return "Connecté avec succès (SIMULATEUR)";
+        }
+
         try {
             console.log("Requesting Bluetooth Device...");
             // We look for either Cycling Power or Fitness Machine service
@@ -55,6 +76,12 @@ window.wahooBluetooth = {
     },
 
     setTargetPower: async function (power) {
+        if (this.isMock) {
+            console.log("SIMULATEUR: Target power set to " + power + "W");
+            this.mockTargetPower = power;
+            return true;
+        }
+
         if (!this.controlPointCharacteristic) {
             console.error("FTMS Control point not available.");
             return false;
@@ -76,6 +103,13 @@ window.wahooBluetooth = {
     },
 
     disconnect: function () {
+        if (this.isMock) {
+            if (this.mockInterval) clearInterval(this.mockInterval);
+            console.log("SIMULATEUR: Disconnected");
+            this.isMock = false;
+            return;
+        }
+        
         if (this.device && this.device.gatt.connected) {
             this.device.gatt.disconnect();
             console.log("Disconnected");
